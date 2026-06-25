@@ -151,6 +151,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);
 .order-card .oc-status{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;margin-top:6px;}
 .oc-status.pending{background:#fff3cd;color:#856404;}
 .oc-status.prepared{background:#d4edda;color:#155724;}
+.order-card .oc-emp{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;margin-top:6px;margin-left:6px;background:#e2e3e5;color:#383d41;}
+.order-card .oc-emp.admin{background:#f8d7da;color:#721c24;}
+.order-card .oc-reassign{margin-top:4px;font-size:11px;padding:3px 6px;border-radius:6px;border:1px solid var(--border);}
 .order-card .oc-load{float:right;background:var(--gold);color:var(--dark);border:none;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;margin-top:4px;}
 .orders-empty{text-align:center;color:var(--muted);padding:40px 0;font-size:13px;}
 .orders-refresh{width:100%;background:var(--dark);color:var(--gold);border:none;padding:10px;font-size:13px;font-weight:600;cursor:pointer;}
@@ -1820,13 +1823,23 @@ async function loadOrders() {
       const items = Object.values(o.order_data||{});
       const totalUnits = items.reduce((s,i)=>s+i.qty,0);
       const cats = [...new Set(items.map(i=>i.cat))].join(', ');
+      const emp = o.employee || 'admin';
+      const isAdminView = currentEmployee === null;
+      const empBadge = `<span class="oc-emp${emp==='admin'?' admin':''}">🏷 ${emp==='admin'?'Admin':emp}</span>`;
+      const reassignSelect = isAdminView ? `
+            <select class="oc-reassign" onchange="reassignOrder('${o.id}', this.value)">
+              <option value="admin" ${emp==='admin'?'selected':''}>Admin</option>
+              <option value="Carlos" ${emp==='Carlos'?'selected':''}>Carlos</option>
+              <option value="Margaret" ${emp==='Margaret'?'selected':''}>Margaret</option>
+            </select>` : '';
       return `<div class="order-card">
         <div style="display:flex;justify-content:space-between;align-items:start;">
           <div>
             <div class="oc-name">👤 ${o.client_name||'Unknown'}${o.client_company?' — '+o.client_company:''}</div>
             <div class="oc-date">📅 ${date}${o.client_phone?' · 📞 '+o.client_phone:''}</div>
             <div class="oc-summary">${items.length} items · ${totalUnits} units · ${cats}</div>
-            <span class="oc-status ${o.status}">${o.status==='pending'?'⏳ Pending':'✅ Prepared'}</span>
+            <span class="oc-status ${o.status}">${o.status==='pending'?'⏳ Pending':'✅ Prepared'}</span>${empBadge}
+            ${reassignSelect}
           </div>
           <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;">
             <button class="oc-load" onclick="loadOrderIntoPrepare('${o.id}')">Load →</button>
@@ -1848,6 +1861,19 @@ async function deleteOrder(orderId){
     loadOrders(); // refresh list
   } catch(e) {
     alert('Error deleting order: '+e.message);
+  }
+}
+
+async function reassignOrder(orderId, newEmployee){
+  if(currentEmployee !== null){ alert('Only admin can reassign orders.'); return; }
+  try {
+    await sbFetch('orders?id=eq.'+orderId, {
+      method:'PATCH',
+      body: JSON.stringify({employee: newEmployee})
+    });
+    loadOrders(); // refresh list to reflect new attribution
+  } catch(e) {
+    alert('Error reassigning order: '+e.message);
   }
 }
 
