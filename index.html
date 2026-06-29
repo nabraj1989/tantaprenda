@@ -106,18 +106,18 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);
 .stock-input:focus{outline:none;border-color:#d4a017;}
 .card.stand{border:2px solid var(--gold);background:#fffdf5;}
 .card.stand .pname{font-weight:700;}
-.card.low-stock .pname{color:#e65c00!important;font-weight:700;}
-.card.low-stock{border-color:#ffb347;background:#fff3e6;}
+.card.low-stock .pname{color:#d4ac00!important;font-weight:700;}
+.card.low-stock{border-color:#f0d000;background:#fffadb;}
 .card.out-of-stock .pname{color:var(--red)!important;font-weight:700;}
 .card.out-of-stock{border-color:#ffcccc;background:#fff8f8;}
 .card.generic.low-stock,.card.generic.out-of-stock{background:linear-gradient(135deg,#f3e9fb,#ece0f7);border-color:#9b59b6;}
-.prep-card.low-stock .pname{color:#e65c00!important;font-weight:700;}
-.prep-card.low-stock{border-color:#ffb347;background:#fff3e6;}
+.prep-card.low-stock .pname{color:#d4ac00!important;font-weight:700;}
+.prep-card.low-stock{border-color:#f0d000;background:#fffadb;}
 .prep-card.out-of-stock .pname{color:var(--red)!important;font-weight:700;}
 .prep-card.out-of-stock{border-color:#ffcccc;background:#fff8f8;}
-.stock-card.low-stock .pname{color:#e65c00!important;font-weight:700;}
+.stock-card.low-stock .pname{color:#d4ac00!important;font-weight:700;}
 .stock-card.out-of-stock .pname{color:var(--red)!important;font-weight:700;}
-.restock-card.low-stock .pname{color:#e65c00!important;font-weight:700;}
+.restock-card.low-stock .pname{color:#d4ac00!important;font-weight:700;}
 .restock-card.out-of-stock .pname{color:var(--red)!important;font-weight:700;}
 .qb.q1-on{background:#1a1208!important;color:#fff!important;border-color:#1a1208!important;}
 .qb.q2-on{background:#1565c0!important;color:#fff!important;border-color:#1565c0!important;}
@@ -232,14 +232,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);
     <span class="sb-items" id="sb-items">0 items</span>
     <span class="sb-units" id="sb-units">0 units ordered</span>
   </div>
-  <button onclick="sendForApproval()" style="background:#fff;color:var(--dark);border:2px solid var(--gold);border-radius:20px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;margin-right:6px;">👁 Approval / <em>Aprovação</em></button>
+  <button id="approval-btn" onclick="sendForApproval()" style="background:#fff;color:var(--dark);border:2px solid var(--gold);border-radius:20px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;margin-right:6px;">👁 Approval / <em>Aprovação</em></button>
   <button class="sb-send" id="send-order-btn" onclick="sendWA()">
     <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.558 4.112 1.528 5.845L.057 23.943l6.272-1.641A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.805 9.805 0 01-5.045-1.392l-.361-.215-3.728.977.993-3.641-.235-.374A9.818 9.818 0 012.182 12C2.182 6.57 6.57 2.182 12 2.182c5.43 0 9.818 4.388 9.818 9.818 0 5.43-4.388 9.818-9.818 9.818z"/></svg>
     Send Order
   </button>
-  <button class="sb-send" id="send-restock-btn" onclick="sendRestockEmail()" style="display:none;background:#2980b9;">
+  <button class="sb-send" id="send-restock-btn" onclick="downloadRestockPDF()" style="display:none;background:#2980b9;">
     <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
-    📥 Send Restock Email
+    📥 Download PDF
   </button>
   <button class="sb-send" id="send-bill-btn" onclick="sendBillSummary()" style="display:none;background:#1a7a4a;">
     <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.558 4.112 1.528 5.845L.057 23.943l6.272-1.641A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.805 9.805 0 01-5.045-1.392l-.361-.215-3.728.977.993-3.641-.235-.374A9.818 9.818 0 012.182 12C2.182 6.57 6.57 2.182 12 2.182c5.43 0 9.818 4.388 9.818 9.818 0 5.43-4.388 9.818-9.818 9.818z"/></svg>
@@ -2004,7 +2004,8 @@ function stockCardH(p){
   const stock = inventory[p.id] !== undefined ? inventory[p.id] : '';
   const nameEsc = p.name.replace(/'/g,"\\'");
   const codeEsc = (p.code||'');
-  return '<div class="stock-card" id="stk-'+p.id+'">'
+  const lsc = lowStockClass(p.id);
+  return '<div class="stock-card'+lsc+'" id="stk-'+p.id+'">'
     +'<div class="pname">'+p.name+'</div>'
     +(p.code ? '<div class="pcode">'+p.code+'</div>' : '')
     +'<div style="display:flex;gap:4px;align-items:center;margin-top:4px;">'
@@ -2141,7 +2142,8 @@ function restockCardH(p){
   const stockBadge = stock === null
     ? '<span style="font-size:9px;color:var(--muted);">—</span>'
     : '<span style="font-size:11px;font-weight:700;padding:2px 6px;border-radius:10px;'+(isLow?'background:#ffe5e5;color:var(--red);':'background:#eef9ee;color:#2e7d32;')+'">'+stock+'</span>';
-  return '<div class="restock-card'+(isLow?' low':'')+'" id="rs-'+p.id+'">'
+  const lsc = lowStockClass(p.id);
+  return '<div class="restock-card'+(isLow?' low':'')+lsc+'" id="rs-'+p.id+'">'
     +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;">'
     +'<div class="pname">'+p.name+'</div>'
     +stockBadge
@@ -2183,14 +2185,6 @@ function renderRestockMode(cat){
   return html;
 }
 
-// Supplier email mapping by category short code
-const SUPPLIER_EMAILS = {
-  'GJ': 'shopmail@global-journey.com',
-  'SS': 'shopmail@global-journey.com',
-  'KR': 'shopmail@global-journey.com',
-};
-const DEFAULT_SUPPLIER_EMAIL = 'sales@mulberrystudios.co.uk';
-
 const COMPANY_SIGNOFF = 'Tantaprenda Unipessoal Lda\n'
   + 'Paul Marsh\n'
   + 'Quinta da Mouraria, Caixa Postal N 232K Mouraria\n'
@@ -2199,107 +2193,92 @@ const COMPANY_SIGNOFF = 'Tantaprenda Unipessoal Lda\n'
   + 'Tel: 289 516 447\n'
   + 'Email: paulmarsh56@sapo.pt';
 
-function sendRestockEmail(){
+function downloadRestockPDF(){
   const items = Object.entries(restockQty).filter(([,q])=>q>0);
   if(!items.length){
     alert('Please enter quantities to reorder first.');
     return;
   }
-  // Group by supplier email, then by category
-  const bySupplier = {};
+  // Group by category
+  const byCat = {};
   items.forEach(([id,qty])=>{
     const p = LK[id];
     if(!p) return;
-    const supplierEmail = SUPPLIER_EMAILS[p.catShort] || DEFAULT_SUPPLIER_EMAIL;
-    if(!bySupplier[supplierEmail]) bySupplier[supplierEmail] = {};
-    if(!bySupplier[supplierEmail][p.catName]) bySupplier[supplierEmail][p.catName] = [];
-    bySupplier[supplierEmail][p.catName].push({code:p.code, name:p.name, qty});
+    if(!byCat[p.catName]) byCat[p.catName] = [];
+    byCat[p.catName].push({code:p.code, name:p.name, qty});
   });
 
-  const supplierEntries = Object.entries(bySupplier);
   const date = new Date().toLocaleDateString('en-GB');
 
-  supplierEntries.forEach(([email, byCat], idx)=>{
-    // Generate PDF order form
-    const doc = new jspdf.jsPDF();
-    let y = 18;
-    doc.setFontSize(16);
+  // Generate PDF order form
+  const doc = new jspdf.jsPDF();
+  let y = 18;
+  doc.setFontSize(16);
+  doc.setFont(undefined,'bold');
+  doc.text('PURCHASE ORDER', 14, y);
+  doc.setFontSize(10);
+  doc.setFont(undefined,'normal');
+  y += 8;
+  doc.text('Date: '+date, 14, y);
+  y += 10;
+
+  // Company details
+  doc.setFont(undefined,'bold');
+  doc.text('Ordered by:', 14, y); y+=5;
+  doc.setFont(undefined,'normal');
+  doc.text('Tantaprenda Unipessoal Lda', 14, y); y+=5;
+  doc.text('Paul Marsh', 14, y); y+=5;
+  doc.text('Quinta da Mouraria, Caixa Postal N 232K Mouraria', 14, y); y+=5;
+  doc.text('8200-370 Albufeira, Portugal', 14, y); y+=5;
+  doc.text('NIF: PT510612679', 14, y); y+=5;
+  doc.text('Tel: 289 516 447  |  Email: paulmarsh56@sapo.pt', 14, y); y+=10;
+
+  // Items table — grid/bordered format like supplier order forms
+  const colCode=14, colTitle=45, colQty=175, tableRight=196;
+  Object.entries(byCat).forEach(([catName, prods])=>{
+    if(y > 265){ doc.addPage(); y = 18; }
     doc.setFont(undefined,'bold');
-    doc.text('PURCHASE ORDER', 14, y);
-    doc.setFontSize(10);
-    doc.setFont(undefined,'normal');
-    y += 8;
-    doc.text('Date: '+date, 14, y);
-    y += 10;
+    doc.setFontSize(11);
+    doc.text(catName, 14, y); y+=5;
 
-    // Company details
+    // Header row with border
+    doc.setFontSize(9);
+    doc.setFillColor(235,235,235);
+    doc.rect(colCode, y-4, tableRight-colCode, 7, 'FD');
     doc.setFont(undefined,'bold');
-    doc.text('Ordered by:', 14, y); y+=5;
+    doc.text('CODE', colCode+2, y);
+    doc.text('PRODUCT', colTitle+2, y);
+    doc.text('QTY', colQty+5, y);
+    y += 7;
+
     doc.setFont(undefined,'normal');
-    doc.text('Tantaprenda Unipessoal Lda', 14, y); y+=5;
-    doc.text('Paul Marsh', 14, y); y+=5;
-    doc.text('Quinta da Mouraria, Caixa Postal N 232K Mouraria', 14, y); y+=5;
-    doc.text('8200-370 Albufeira, Portugal', 14, y); y+=5;
-    doc.text('NIF: PT510612679', 14, y); y+=5;
-    doc.text('Tel: 289 516 447  |  Email: paulmarsh56@sapo.pt', 14, y); y+=10;
-
-    // Items table — grid/bordered format like supplier order forms
-    const colCode=14, colTitle=45, colQty=175, tableRight=196;
-    Object.entries(byCat).forEach(([catName, prods])=>{
-      if(y > 265){ doc.addPage(); y = 18; }
-      doc.setFont(undefined,'bold');
-      doc.setFontSize(11);
-      doc.text(catName, 14, y); y+=5;
-
-      // Header row with border
-      doc.setFontSize(9);
-      doc.setFillColor(235,235,235);
-      doc.rect(colCode, y-4, tableRight-colCode, 7, 'FD');
-      doc.setFont(undefined,'bold');
-      doc.text('CODE', colCode+2, y);
-      doc.text('PRODUCT', colTitle+2, y);
-      doc.text('QTY', colQty+5, y);
-      y += 7;
-
-      doc.setFont(undefined,'normal');
-      prods.forEach(p=>{
-        if(y > 280){
-          doc.addPage(); y = 18;
-          // repeat header on new page
-          doc.setFillColor(235,235,235);
-          doc.rect(colCode, y-4, tableRight-colCode, 7, 'FD');
-          doc.setFont(undefined,'bold');
-          doc.text('CODE', colCode+2, y);
-          doc.text('PRODUCT', colTitle+2, y);
-          doc.text('QTY', colQty+5, y);
-          y += 7;
-          doc.setFont(undefined,'normal');
-        }
-        const rowH = 7;
-        doc.rect(colCode, y-4, tableRight-colCode, rowH);
-        doc.line(colTitle, y-4, colTitle, y-4+rowH);
-        doc.line(colQty, y-4, colQty, y-4+rowH);
-        doc.text((p.code||''), colCode+2, y);
-        doc.text(p.name.substring(0,48), colTitle+2, y);
-        doc.text(String(p.qty), colQty+5, y);
-        y += rowH;
-      });
-      y += 6;
+    prods.forEach(p=>{
+      if(y > 280){
+        doc.addPage(); y = 18;
+        // repeat header on new page
+        doc.setFillColor(235,235,235);
+        doc.rect(colCode, y-4, tableRight-colCode, 7, 'FD');
+        doc.setFont(undefined,'bold');
+        doc.text('CODE', colCode+2, y);
+        doc.text('PRODUCT', colTitle+2, y);
+        doc.text('QTY', colQty+5, y);
+        y += 7;
+        doc.setFont(undefined,'normal');
+      }
+      const rowH = 7;
+      doc.rect(colCode, y-4, tableRight-colCode, rowH);
+      doc.line(colTitle, y-4, colTitle, y-4+rowH);
+      doc.line(colQty, y-4, colQty, y-4+rowH);
+      doc.text((p.code||''), colCode+2, y);
+      doc.text(p.name.substring(0,48), colTitle+2, y);
+      doc.text(String(p.qty), colQty+5, y);
+      y += rowH;
     });
-
-    const fname = 'restock-order-'+(idx+1)+'-'+date.replace(/\//g,'-')+'.pdf';
-    doc.save(fname);
-
-    // Open email with short body referencing the PDF
-    const subject = 'Order - Tantaprenda Unipessoal Lda';
-    const body = 'Hello,\n\nPlease find our order attached (PDF: '+fname+').\n\nThank you,\nTantaprenda Unipessoal Lda\nTel: 289 516 447';
-    const url = 'mailto:'+email+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
-    if(idx===0){
-      setTimeout(()=>{ window.location.href = url; }, 500);
-    } else {
-      setTimeout(()=>{ openWA(url); }, 800);
-    }
+    y += 6;
   });
+
+  const fname = 'restock-order-'+date.replace(/\//g,'-')+'.pdf';
+  doc.save(fname);
 
   // Save pending restock for later "Receive Stock" step
   const pending = JSON.parse(localStorage.getItem('pendingRestock')||'{}');
@@ -2307,7 +2286,7 @@ function sendRestockEmail(){
   localStorage.setItem('pendingRestock', JSON.stringify(pending));
   restockQty = {};
   renderPage();
-  alert('PDF order form(s) downloaded! Please attach the downloaded PDF to the email that opens, then send.\n\nItems added to your "Receive Stock" list for when delivery arrives.');
+  alert('PDF order form downloaded!\n\nItems added to your "Receive Stock" list for when delivery arrives.');
 }// ─── RECEIVE STOCK PANEL ────────────────────────────────────────────────────
 function openReceiveStock(){
   const pending = JSON.parse(localStorage.getItem('pendingRestock')||'{}');
@@ -2417,6 +2396,16 @@ function checkLoginPin(){
     // Update restock visibility
     const rb = document.getElementById('btn-restock');
     if(rb) rb.style.display = currentEmployee ? 'none' : '';
+    // If items were already selected before logging in, ask whether to keep them
+    const hasItems = Object.values(order).some(q=>q>0);
+    if(hasItems){
+      const keep = confirm(
+        'You already have items selected.\nKeep them or start a new order?\n\n' +
+        'Já tem itens selecionados.\nDeseja mantê-los ou iniciar um novo pedido?\n\n' +
+        'OK = Keep / Manter\nCancel = New order / Novo pedido'
+      );
+      if(!keep) doNew();
+    }
   } else {
     document.getElementById('login-err').style.display = 'block';
     document.getElementById('login-input').value = '';
@@ -2426,9 +2415,11 @@ function checkLoginPin(){
 function updateLoginBtn(){
   const label = document.getElementById('login-btn-label');
   const modeBar = document.getElementById('mode-bar-wrap');
+  const approvalBtn = document.getElementById('approval-btn');
   if(currentEmployee !== undefined){
-    // Someone is logged in (admin or employee)
+    // Someone is logged in (admin or employee) — Approval is only for clients without a password
     if(modeBar) modeBar.style.display = 'block';
+    if(approvalBtn) approvalBtn.style.display = 'none';
     if(currentEmployee){
       if(label) label.innerHTML = '👤 '+currentEmployee+' <span style="font-size:9px;opacity:0.7;">/ Sair</span>';
     } else {
@@ -2436,13 +2427,14 @@ function updateLoginBtn(){
     }
   } else {
     if(modeBar) modeBar.style.display = 'none';
+    if(approvalBtn) approvalBtn.style.display = '';
     if(label) label.innerHTML = '🔑 Login / <em>Entrar</em>';
   }
 }
 
 function empLogout(){
   currentEmployee = undefined;
-  updateLoginBtn();
+  window.location.reload();
 }
 
 function updateEmpBar(){
