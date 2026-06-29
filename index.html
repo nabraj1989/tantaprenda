@@ -105,12 +105,18 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);
 .stock-input:focus{outline:none;border-color:#d4a017;}
 .card.stand{border:2px solid var(--gold);background:#fffdf5;}
 .card.stand .pname{font-weight:700;}
-.card.low-stock .pname{color:var(--red)!important;font-weight:700;}
-.card.low-stock{border-color:#ffcccc;background:#fff8f8;}
-.prep-card.low-stock .pname{color:var(--red)!important;font-weight:700;}
-.prep-card.low-stock{border-color:#ffcccc;background:#fff8f8;}
-.stock-card.low-stock .pname{color:var(--red)!important;font-weight:700;}
-.restock-card.low-stock .pname{color:var(--red)!important;font-weight:700;}
+.card.low-stock .pname{color:#856404!important;font-weight:700;}
+.card.low-stock{border-color:#ffe9a8;background:#fffbf0;}
+.card.out-of-stock .pname{color:var(--red)!important;font-weight:700;}
+.card.out-of-stock{border-color:#ffcccc;background:#fff8f8;}
+.prep-card.low-stock .pname{color:#856404!important;font-weight:700;}
+.prep-card.low-stock{border-color:#ffe9a8;background:#fffbf0;}
+.prep-card.out-of-stock .pname{color:var(--red)!important;font-weight:700;}
+.prep-card.out-of-stock{border-color:#ffcccc;background:#fff8f8;}
+.stock-card.low-stock .pname{color:#856404!important;font-weight:700;}
+.stock-card.out-of-stock .pname{color:var(--red)!important;font-weight:700;}
+.restock-card.low-stock .pname{color:#856404!important;font-weight:700;}
+.restock-card.out-of-stock .pname{color:var(--red)!important;font-weight:700;}
 .qb.q1-on{background:#1a1208!important;color:#fff!important;border-color:#1a1208!important;}
 .qb.q2-on{background:#1565c0!important;color:#fff!important;border-color:#1565c0!important;}
 .qb.q3-on{background:#2e7d32!important;color:#fff!important;border-color:#2e7d32!important;}
@@ -151,6 +157,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);
 .order-card .oc-status{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;margin-top:6px;}
 .oc-status.pending{background:#fff3cd;color:#856404;}
 .oc-status.prepared{background:#d4edda;color:#155724;}
+.oc-status.stocked{background:#cce5ff;color:#004085;}
+.order-card .oc-stock{background:#1a7a4a;color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;margin-top:4px;}
 .order-card .oc-emp{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;margin-top:6px;margin-left:6px;background:#e2e3e5;color:#383d41;}
 .order-card .oc-emp.admin{background:#f8d7da;color:#721c24;}
 .order-card .oc-reassign{margin-top:4px;font-size:11px;padding:3px 6px;border-radius:6px;border:1px solid var(--border);}
@@ -1032,7 +1040,12 @@ CATS.forEach(cat=>{
 
 // ─── CARD ─────────────────────────────────────────────────────────────────────
 function qClass(q){ return q===1?' q1':q===2?' q2':q>2?' q3':''; }
-function lowStockClass(id){ return (inventory[id]!==undefined&&inventory[id]<5&&inventory[id]>=0)?' low-stock':''; }
+function lowStockClass(id){
+  if(inventory[id]===undefined) return ''; // not tracked yet — no color until stock is counted
+  if(inventory[id]<=0) return ' out-of-stock';
+  if(inventory[id]<10) return ' low-stock';
+  return '';
+}
 
 function cardH(p){
   const q=order[p.id]||0,isOos=oos[p.id],isGB=!!p.isGB,isStand=!!p.isStand;
@@ -1323,7 +1336,7 @@ let inventory = {}; // product_id -> stock count
 let inventoryLoaded = false;
 let restockQty = {}; // product_id -> qty to reorder
 
-async function loadInventory(){
+async function loadInventory(silent){
   try {
     inventory = {};
     const pageSize = 1000;
@@ -1339,9 +1352,11 @@ async function loadInventory(){
     }
     inventoryLoaded = true;
     console.log('Inventory loaded:', totalLoaded, 'items (paginated)');
+    return true;
   } catch(e){
     console.error('Failed to load inventory:', e);
-    alert('Failed to load stock data: '+e.message+'\n\nPlease reopen Stock mode.');
+    if(!silent) alert('Failed to load stock data: '+e.message+'\n\nPlease reopen Stock mode.');
+    return false;
   }
 }
 
@@ -1382,12 +1397,10 @@ async function deductStock(productId, qty){
   if(!(productId in inventory)) return; // only track items user added
   const newStock = Math.max(0, (inventory[productId]||0) - qty);
   inventory[productId] = newStock;
-  try {
-    await sbFetch('inventory?product_id=eq.'+encodeURIComponent(productId), {
-      method:'PATCH',
-      body: JSON.stringify({stock:newStock})
-    });
-  } catch(e){ console.error('Failed to deduct stock:', e); }
+  await sbFetch('inventory?product_id=eq.'+encodeURIComponent(productId), {
+    method:'PATCH',
+    body: JSON.stringify({stock:newStock})
+  });
 }
 let catReturns = {}; // returns per category, persists across mode switches
 let currentOrderId = null; // tracks loaded order for marking as prepared
@@ -1558,11 +1571,7 @@ const CAT_CODES = {
   'Mix Jewellery Stand':               125,
 };
 async function sendBillSummary(){
-  if(!confirm('Are you sure you want to send the bill summary?\nThis will also deduct stock automatically.')) return;
-  // Disable button immediately to prevent double-tap/double-deduction
-  const billBtn = document.getElementById('send-bill-btn');
-  if(billBtn){ billBtn.disabled=true; billBtn.style.opacity='0.5'; billBtn.textContent='Sending...'; }
-  try{
+  if(!confirm('Are you sure you want to send the bill summary?')) return;
   const name = document.getElementById('cname').value.trim();
   const addr = document.getElementById('ccomp').value.trim();
   const phone = document.getElementById('cphone').value.trim();
@@ -1642,31 +1651,27 @@ async function sendBillSummary(){
 
   msg += '\n━━━━━━━━━━━━━━━━━━━━━━';
 
-  // Deduct stock for items already tracked in inventory
-  if(!inventoryLoaded){ await loadInventory(); }
-  const deductPromises = [];
-  Object.keys(order).forEach(id=>{
-    const q = order[id]||0;
-    if(!q) return;
-    const pr = prepare[id]||{avail:q};
-    const avail = pr.avail!==undefined ? pr.avail : q;
-    if(avail>0) deductPromises.push(deductStock(id, avail));
-  });
-  await Promise.all(deductPromises);
+  // Disable button only now that we know we're actually sending (avoids leaving it
+  // stuck on "Sending..." for the "no items" early-return above)
+  const billBtn = document.getElementById('send-bill-btn');
+  if(billBtn){ billBtn.disabled=true; billBtn.style.opacity='0.5'; billBtn.textContent='Sending...'; }
+  try{
+    const url = 'https://wa.me/351917516301?text='+encodeURIComponent(msg);
+    openWA(url);
 
-  const url = 'https://wa.me/351917516301?text='+encodeURIComponent(msg);
-  openWA(url);
-
-  // Mark this order as prepared now that the bill has been sent
-  if(currentOrderId){
-    sbFetch('orders?id=eq.'+currentOrderId, {
-      method:'PATCH',
-      body: JSON.stringify({status:'prepared', prepare_data: prepare})
-    }).catch(e=>console.error('Failed to mark prepared:', e));
-    currentOrderId = null;
-  }
+    // Mark this order as prepared. Stock is updated separately via the
+    // "Update Stock" button on the order in Orders, so this never blocks sending.
+    if(currentOrderId){
+      const orderToMark = currentOrderId;
+      currentOrderId = null;
+      sbFetch('orders?id=eq.'+orderToMark, {
+        method:'PATCH',
+        body: JSON.stringify({status:'prepared', prepare_data: prepare})
+      }).catch(e=>console.error('Failed to mark prepared:', e));
+    }
   } catch(e){
     alert('Error: '+e.message);
+  } finally {
     if(billBtn){ billBtn.disabled=false; billBtn.style.opacity=''; billBtn.innerHTML='<svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z"/></svg> Send Bill'; }
   }
 }
@@ -1681,19 +1686,30 @@ const EMPLOYEES = {
 };
 let currentEmployee = undefined; // undefined=nobody, null=admin, string=employee
 
-async function sbFetch(path, options={}) {
-  const res = await fetch(SB_URL + '/rest/v1/' + path, {
-    ...options,
-    cache: 'no-store',
-    headers: {
-      'apikey': SB_KEY,
-      'Authorization': 'Bearer ' + SB_KEY,
-      'Content-Type': 'application/json',
-      'Prefer': 'return=representation',
-      'Cache-Control': 'no-cache',
-      ...options.headers
-    }
-  });
+async function sbFetch(path, options={}, timeoutMs=10000) {
+  const controller = new AbortController();
+  const timer = setTimeout(()=>controller.abort(), timeoutMs);
+  let res;
+  try {
+    res = await fetch(SB_URL + '/rest/v1/' + path, {
+      ...options,
+      cache: 'no-store',
+      signal: controller.signal,
+      headers: {
+        'apikey': SB_KEY,
+        'Authorization': 'Bearer ' + SB_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation',
+        'Cache-Control': 'no-cache',
+        ...options.headers
+      }
+    });
+  } catch(e) {
+    if(e.name === 'AbortError') throw new Error('Request timed out — check your connection and try again.');
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
   const text = await res.text();
   if(!res.ok) throw new Error('HTTP '+res.status+': '+text);
   if(!text) return null;
@@ -1732,6 +1748,7 @@ async function saveOrderToSupabase(clientName, clientCompany, clientPhone) {
 let pinTarget = 'orders'; // 'orders' or 'prepare'
 
 function openOrders() {
+  if(currentEmployee !== undefined){ openOrdersPanel(); return; }
   pinTarget = 'orders';
   document.getElementById('pin-overlay').classList.add('open');
   document.getElementById('pin-input').value = '';
@@ -1742,6 +1759,7 @@ function openOrders() {
 }
 
 function askPreparePin() {
+  if(currentEmployee !== undefined){ setMode('prepare'); return; }
   pinTarget = 'prepare';
   document.getElementById('pin-overlay').classList.add('open');
   document.getElementById('pin-input').value = '';
@@ -1752,6 +1770,7 @@ function askPreparePin() {
 }
 
 function askStockPin() {
+  if(currentEmployee !== undefined){ setMode('stock'); return; }
   pinTarget = 'stock';
   document.getElementById('pin-overlay').classList.add('open');
   document.getElementById('pin-input').value = '';
@@ -1762,6 +1781,11 @@ function askStockPin() {
 }
 
 function askRestockPin() {
+  if(currentEmployee !== undefined){
+    if(currentEmployee !== null){ alert('Only admin can access Restock mode.'); return; }
+    setMode('restock');
+    return;
+  }
   pinTarget = 'restock';
   document.getElementById('pin-overlay').classList.add('open');
   document.getElementById('pin-input').value = '';
@@ -1826,6 +1850,9 @@ async function loadOrders() {
       const emp = o.employee || 'admin';
       const isAdminView = currentEmployee === null;
       const empBadge = `<span class="oc-emp${emp==='admin'?' admin':''}">🏷 ${emp==='admin'?'Admin':emp}</span>`;
+      const isStocked = o.status==='prepared' && o.prepare_data && o.prepare_data._stocked===true;
+      const statusClass = o.status==='pending' ? 'pending' : (isStocked ? 'stocked' : 'prepared');
+      const statusLabel = o.status==='pending' ? '⏳ Pending' : (isStocked ? '📦 Stocked' : '✅ Prepared');
       const reassignSelect = isAdminView ? `
             <select class="oc-reassign" onchange="reassignOrder('${o.id}', this.value)">
               <option value="admin" ${emp==='admin'?'selected':''}>Admin</option>
@@ -1838,11 +1865,12 @@ async function loadOrders() {
             <div class="oc-name">👤 ${o.client_name||'Unknown'}${o.client_company?' — '+o.client_company:''}</div>
             <div class="oc-date">📅 ${date}${o.client_phone?' · 📞 '+o.client_phone:''}</div>
             <div class="oc-summary">${items.length} items · ${totalUnits} units · ${cats}</div>
-            <span class="oc-status ${o.status}">${o.status==='pending'?'⏳ Pending':'✅ Prepared'}</span>${empBadge}
+            <span class="oc-status ${statusClass}">${statusLabel}</span>${empBadge}
             ${reassignSelect}
           </div>
           <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;">
             <button class="oc-load" onclick="loadOrderIntoPrepare('${o.id}')">Load →</button>
+            ${(o.status==='prepared' && !isStocked) ? `<button class="oc-stock" id="stock-btn-${o.id}" onclick="updateOrderStock('${o.id}')">📦 Update Stock</button>` : ''}
             <button onclick="deleteOrder('${o.id}')" style="background:none;border:1px solid #c0392b;color:#c0392b;border-radius:6px;padding:4px 8px;font-size:10px;font-weight:700;cursor:pointer;">🗑 Delete</button>
           </div>
         </div>
@@ -1874,6 +1902,69 @@ async function reassignOrder(orderId, newEmployee){
     loadOrders(); // refresh list to reflect new attribution
   } catch(e) {
     alert('Error reassigning order: '+e.message);
+  }
+}
+
+// ─── UPDATE STOCK (decoupled from Send Bill) ──────────────────────────────────
+// Tracks which items of an order already had stock deducted, in localStorage,
+// so a retry after a partial failure never double-deducts the items that
+// already succeeded.
+function stockAppliedKey(orderId){ return 'stockApplied_'+orderId; }
+function getStockApplied(orderId){
+  return JSON.parse(localStorage.getItem(stockAppliedKey(orderId))||'{}');
+}
+function markStockApplied(orderId, itemId){
+  const applied = getStockApplied(orderId);
+  applied[itemId] = true;
+  localStorage.setItem(stockAppliedKey(orderId), JSON.stringify(applied));
+}
+
+async function updateOrderStock(orderId){
+  const btn = document.getElementById('stock-btn-'+orderId);
+  if(btn){ btn.disabled=true; btn.style.opacity='0.5'; btn.textContent='Updating...'; }
+  try {
+    // Always fetch fresh so deductions land on current stock. If this fails, abort —
+    // otherwise items would look "untracked" and silently skip deduction below.
+    const loaded = await loadInventory(true);
+    if(!loaded) throw new Error('Could not load current stock levels. Check your connection and try again.');
+    const data = await sbFetch('orders?id=eq.'+orderId+'&select=*');
+    const o = data && data[0];
+    if(!o){ alert('Order not found.'); return; }
+    const prepareData = (o.prepare_data && typeof o.prepare_data==='object') ? o.prepare_data : {};
+    const applied = getStockApplied(orderId);
+    const items = Object.entries(o.order_data||{}).filter(([id])=>!applied[id]);
+
+    if(!items.length){
+      await sbFetch('orders?id=eq.'+orderId, {method:'PATCH', body: JSON.stringify({prepare_data: {...prepareData, _stocked:true}})});
+      localStorage.removeItem(stockAppliedKey(orderId));
+      alert('Stock already up to date for this order.');
+      return;
+    }
+
+    const results = await Promise.allSettled(items.map(async ([id, item])=>{
+      const pr = prepareData[id] || {avail: item.qty};
+      const avail = pr.avail!==undefined ? pr.avail : item.qty;
+      if(avail>0) await deductStock(id, avail);
+      markStockApplied(orderId, id);
+    }));
+
+    const failed = results
+      .map((r,i)=>({r, id:items[i][0]}))
+      .filter(x=>x.r.status==='rejected');
+
+    if(failed.length){
+      alert('Updated '+(items.length-failed.length)+' of '+items.length+' item(s). These failed:\n'
+        + failed.map(f=>(LK[f.id]&&LK[f.id].name||f.id)+' — '+f.r.reason.message).join('\n')
+        + '\n\nTap "Update Stock" again to retry just the failed items.');
+    } else {
+      await sbFetch('orders?id=eq.'+orderId, {method:'PATCH', body: JSON.stringify({prepare_data: {...prepareData, _stocked:true}})});
+      localStorage.removeItem(stockAppliedKey(orderId));
+      alert('Stock updated for this order.');
+    }
+  } catch(e){
+    alert('Error updating stock: '+e.message);
+  } finally {
+    loadOrders();
   }
 }
 
@@ -2408,6 +2499,9 @@ renderTabs();renderPage();updateTotals();
 loadFromURL();
 // Auto-open orders panel if ?orders param in URL
 if(window.location.search.includes('orders')) openOrders();
+// Load stock levels in the background (for everyone, not just Stock/Restock mode)
+// so low-stock/out-of-stock name coloring works while ordering or preparing too.
+if(!inventoryLoaded) loadInventory(true).then(()=>renderPage());
 </script>
 </body>
 </html>
