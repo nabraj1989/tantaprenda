@@ -52,7 +52,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);
 .card.generic{background:linear-gradient(135deg,#f3e9fb,#ece0f7);border:1.5px solid #9b59b6;}
 .pname{font-size:11px;font-weight:500;line-height:1.25;}
 .card.gb .pname{color:var(--gold);font-weight:700;font-size:11px;text-align:center;}
-.card.generic .pname{color:#7d3c98;font-weight:700;}
+.card.generic .pname{font-weight:700;}
 .pcode{font-size:9px;color:var(--muted);}
 .qrow{display:flex;gap:3px;align-items:center;margin-top:2px;}
 .qb{background:var(--warm);border:1px solid var(--border);border-radius:5px;padding:3px 7px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;min-width:26px;text-align:center;}
@@ -109,6 +109,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);
 .card.low-stock{border-color:#ffe9a8;background:#fffbf0;}
 .card.out-of-stock .pname{color:var(--red)!important;font-weight:700;}
 .card.out-of-stock{border-color:#ffcccc;background:#fff8f8;}
+.card.generic.low-stock,.card.generic.out-of-stock{background:linear-gradient(135deg,#f3e9fb,#ece0f7);border-color:#9b59b6;}
 .prep-card.low-stock .pname{color:#856404!important;font-weight:700;}
 .prep-card.low-stock{border-color:#ffe9a8;background:#fffbf0;}
 .prep-card.out-of-stock .pname{color:var(--red)!important;font-weight:700;}
