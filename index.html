@@ -1340,11 +1340,39 @@ let restockQty = {}; // product_id -> qty to reorder
 let pendingRestock = {}; // product_id -> qty ordered, awaiting receipt (synced via Supabase)
 let pendingRestockLoaded = false;
 
+async function migrateLegacyLocalPendingRestock(){
+  // One-time migration: older versions stored the pending restock list in
+  // this browser's localStorage only. Pull any leftover items into Supabase
+  // so orders placed before the sync fix aren't silently lost.
+  let legacy;
+  try { legacy = JSON.parse(localStorage.getItem('pendingRestock')||'{}'); } catch(e){ legacy = {}; }
+  const entries = Object.entries(legacy).filter(([,q])=>q>0);
+  if(!entries.length) return;
+  for(const [id,qty] of entries){
+    const p = LK[id];
+    const newQty = (pendingRestock[id]||0) + qty;
+    const updateResult = await sbFetch('pending_restock?product_id=eq.'+encodeURIComponent(id), {
+      method:'PATCH',
+      body: JSON.stringify({qty:newQty, product_name:p?p.name:'', product_code:p&&p.code?p.code:''})
+    });
+    if(!updateResult || updateResult.length===0){
+      await sbFetch('pending_restock', {
+        method:'POST',
+        body: JSON.stringify({product_id:id, qty:newQty, product_name:p?p.name:'', product_code:p&&p.code?p.code:''})
+      });
+    }
+    pendingRestock[id] = newQty;
+  }
+  localStorage.removeItem('pendingRestock');
+  console.log('Migrated', entries.length, 'legacy pending restock item(s) from localStorage to Supabase.');
+}
+
 async function loadPendingRestock(silent){
   try {
     const rows = await sbFetch('pending_restock?select=product_id,qty');
     pendingRestock = {};
     (rows||[]).forEach(r=>{ pendingRestock[r.product_id] = r.qty; });
+    await migrateLegacyLocalPendingRestock();
     pendingRestockLoaded = true;
     return true;
   } catch(e){
