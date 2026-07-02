@@ -1337,6 +1337,22 @@ let prepare = {};
 let inventory = {}; // product_id -> stock count
 let inventoryLoaded = false;
 let restockQty = {}; // product_id -> qty to reorder
+let pendingRestock = {}; // product_id -> qty ordered, awaiting receipt (synced via Supabase)
+let pendingRestockLoaded = false;
+
+async function loadPendingRestock(silent){
+  try {
+    const rows = await sbFetch('pending_restock?select=product_id,qty');
+    pendingRestock = {};
+    (rows||[]).forEach(r=>{ pendingRestock[r.product_id] = r.qty; });
+    pendingRestockLoaded = true;
+    return true;
+  } catch(e){
+    console.error('Failed to load pending restock:', e);
+    if(!silent) alert('Failed to load pending restock list: '+e.message);
+    return false;
+  }
+}
 
 async function loadInventory(silent){
   try {
@@ -1413,6 +1429,7 @@ function setMode(mode){
   document.getElementById('btn-order').className = 'mode-btn order-mode' + (mode==='order' ? '' : ' inactive');
   if(mode==='stock' && !inventoryLoaded) loadInventory().then(()=>renderPage());
   if(mode==='restock' && !inventoryLoaded) loadInventory().then(()=>renderPage());
+  if(mode==='restock' && !pendingRestockLoaded) loadPendingRestock().then(()=>renderPage());
   // Show/hide Restock button based on role
   const restockBtn = document.getElementById('btn-restock');
   if(restockBtn) restockBtn.style.display = currentEmployee ? 'none' : '';
@@ -2164,8 +2181,7 @@ function restockCardH(p){
 function renderRestockMode(cat){
   currentRestockCat = cat.id;
   const cols = typeof cat.cols === 'number' ? cat.cols : 3;
-  const pending = JSON.parse(localStorage.getItem('pendingRestock')||'{}');
-  const pendingCount = Object.values(pending).filter(q=>q>0).length;
+  const pendingCount = Object.values(pendingRestock).filter(q=>q>0).length;
   let html = '<div class="sub-t">📦 Whole Stock & Display</div><div class="g3">'
     + extraStandItems(cat.id).map(id=>restockCardH({...LK[id],catShort:cat.short})).join('')
     + '</div>';
@@ -2197,7 +2213,7 @@ const COMPANY_SIGNOFF = 'Tantaprenda Unipessoal Lda\n'
   + 'Tel: 289 516 447\n'
   + 'Email: paulmarsh56@sapo.pt';
 
-function downloadRestockPDF(){
+async function downloadRestockPDF(){
   const items = Object.entries(restockQty).filter(([,q])=>q>0);
   if(!items.length){
     alert('Please enter quantities to reorder first.');
@@ -2284,16 +2300,32 @@ function downloadRestockPDF(){
   const fname = 'restock-order-'+date.replace(/\//g,'-')+'.pdf';
   doc.save(fname);
 
-  // Save pending restock for later "Receive Stock" step
-  const pending = JSON.parse(localStorage.getItem('pendingRestock')||'{}');
-  items.forEach(([id,qty])=>{ pending[id] = (pending[id]||0) + qty; });
-  localStorage.setItem('pendingRestock', JSON.stringify(pending));
+  // Save pending restock for later "Receive Stock" step (synced via Supabase)
+  try {
+    for(const [id,qty] of items){
+      const p = LK[id];
+      const newQty = (pendingRestock[id]||0) + qty;
+      const updateResult = await sbFetch('pending_restock?product_id=eq.'+encodeURIComponent(id), {
+        method:'PATCH',
+        body: JSON.stringify({qty:newQty, product_name:p?p.name:'', product_code:p&&p.code?p.code:''})
+      });
+      if(!updateResult || updateResult.length===0){
+        await sbFetch('pending_restock', {
+          method:'POST',
+          body: JSON.stringify({product_id:id, qty:newQty, product_name:p?p.name:'', product_code:p&&p.code?p.code:''})
+        });
+      }
+      pendingRestock[id] = newQty;
+    }
+  } catch(e){
+    alert('PDF downloaded, but failed to save the pending restock list: '+e.message+'\n\nReceive Stock may not show these items on other devices.');
+  }
   restockQty = {};
   renderPage();
   alert('PDF order form downloaded!\n\nItems added to your "Receive Stock" list for when delivery arrives.');
 }// ─── RECEIVE STOCK PANEL ────────────────────────────────────────────────────
 function openReceiveStock(){
-  const pending = JSON.parse(localStorage.getItem('pendingRestock')||'{}');
+  const pending = pendingRestock;
   const list = document.getElementById('receive-list');
   const entries = Object.entries(pending).filter(([,q])=>q>0);
   if(!entries.length){
@@ -2319,25 +2351,25 @@ function closeReceivePanel(){
   document.getElementById('receive-panel').classList.remove('open');
 }
 
-function removeFromPending(id){
-  const pending = JSON.parse(localStorage.getItem('pendingRestock')||'{}');
-  delete pending[id];
-  localStorage.setItem('pendingRestock', JSON.stringify(pending));
+async function removeFromPending(id){
+  delete pendingRestock[id];
+  try {
+    await sbFetch('pending_restock?product_id=eq.'+encodeURIComponent(id), {method:'DELETE'});
+  } catch(e){
+    alert('Failed to remove item from the shared pending list: '+e.message);
+  }
   openReceiveStock(); // refresh list
 }
 
 async function applyReceiveStock(){
-  const pending = JSON.parse(localStorage.getItem('pendingRestock')||'{}');
-  const entries = Object.entries(pending).filter(([,q])=>q>0);
+  const entries = Object.entries(pendingRestock).filter(([,q])=>q>0);
   if(!inventoryLoaded) await loadInventory();
 
-  const remaining = {};
   for(const [id,qty] of entries){
     const checkbox = document.getElementById('recv-'+id);
     const qtyInput = document.getElementById('recv-qty-'+id);
     if(!checkbox || !checkbox.checked){
       // Not received — keep in pending list for next time
-      remaining[id] = qty;
       continue;
     }
     const receivedQty = parseInt(qtyInput.value)||0;
@@ -2349,8 +2381,13 @@ async function applyReceiveStock(){
       await setStock(id, p.name, p.code||'', p.catShort||'', newStock);
     }
     // Item processed — remove from pending list entirely (no partial carryover)
+    delete pendingRestock[id];
+    try {
+      await sbFetch('pending_restock?product_id=eq.'+encodeURIComponent(id), {method:'DELETE'});
+    } catch(e){
+      console.error('Failed to clear pending restock entry for', id, e);
+    }
   }
-  localStorage.setItem('pendingRestock', JSON.stringify(remaining));
   closeReceivePanel();
   renderPage(); // refresh restock view to update pending count and stock badges
   alert('Stock updated!');
