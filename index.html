@@ -1955,19 +1955,9 @@ async function reassignOrder(orderId, newEmployee){
 }
 
 // ─── UPDATE STOCK (decoupled from Send Bill) ──────────────────────────────────
-// Tracks which items of an order already had stock deducted, in localStorage,
-// so a retry after a partial failure never double-deducts the items that
-// already succeeded.
-function stockAppliedKey(orderId){ return 'stockApplied_'+orderId; }
-function getStockApplied(orderId){
-  return JSON.parse(localStorage.getItem(stockAppliedKey(orderId))||'{}');
-}
-function markStockApplied(orderId, itemId){
-  const applied = getStockApplied(orderId);
-  applied[itemId] = true;
-  localStorage.setItem(stockAppliedKey(orderId), JSON.stringify(applied));
-}
-
+// Tracks which items of an order already had stock deducted on the order
+// itself (Supabase), so a retry after a partial failure — even from a
+// different device — never double-deducts the items that already succeeded.
 async function updateOrderStock(orderId){
   if(currentEmployee !== null){ alert('Only admin can update stock.'); return; }
   const btn = document.getElementById('stock-btn-'+orderId);
@@ -1980,35 +1970,42 @@ async function updateOrderStock(orderId){
     const data = await sbFetch('orders?id=eq.'+orderId+'&select=*');
     const o = data && data[0];
     if(!o){ alert('Order not found.'); return; }
-    const prepareData = (o.prepare_data && typeof o.prepare_data==='object') ? o.prepare_data : {};
-    const applied = getStockApplied(orderId);
+    let prepareData = (o.prepare_data && typeof o.prepare_data==='object') ? o.prepare_data : {};
+    // Which items were already deducted, tracked in the order itself (Supabase) rather
+    // than localStorage — so a partial failure retried from a different device doesn't
+    // re-deduct items that already succeeded elsewhere.
+    let applied = {...(prepareData._appliedItems||{})};
     const items = Object.entries(o.order_data||{}).filter(([id])=>!applied[id]);
 
     if(!items.length){
       await sbFetch('orders?id=eq.'+orderId, {method:'PATCH', body: JSON.stringify({prepare_data: {...prepareData, _stocked:true}})});
-      localStorage.removeItem(stockAppliedKey(orderId));
       alert('Stock already up to date for this order.');
       return;
     }
 
-    const results = await Promise.allSettled(items.map(async ([id, item])=>{
-      const pr = prepareData[id] || {avail: item.qty};
-      const avail = pr.avail!==undefined ? pr.avail : item.qty;
-      if(avail>0) await deductStock(id, avail);
-      markStockApplied(orderId, id);
-    }));
-
-    const failed = results
-      .map((r,i)=>({r, id:items[i][0]}))
-      .filter(x=>x.r.status==='rejected');
+    // Processed sequentially (not Promise.allSettled) so each item's "applied" flag is
+    // persisted to Supabase before the next one starts, instead of racing concurrent
+    // writes to the same prepare_data JSON field.
+    const failed = [];
+    for(const [id, item] of items){
+      try {
+        const pr = prepareData[id] || {avail: item.qty};
+        const avail = pr.avail!==undefined ? pr.avail : item.qty;
+        if(avail>0) await deductStock(id, avail);
+        applied = {...applied, [id]:true};
+        prepareData = {...prepareData, _appliedItems: applied};
+        await sbFetch('orders?id=eq.'+orderId, {method:'PATCH', body: JSON.stringify({prepare_data: prepareData})});
+      } catch(e){
+        failed.push({id, reason: e});
+      }
+    }
 
     if(failed.length){
       alert('Updated '+(items.length-failed.length)+' of '+items.length+' item(s). These failed:\n'
-        + failed.map(f=>(LK[f.id]&&LK[f.id].name||f.id)+' — '+f.r.reason.message).join('\n')
+        + failed.map(f=>(LK[f.id]&&LK[f.id].name||f.id)+' — '+f.reason.message).join('\n')
         + '\n\nTap "Update Stock" again to retry just the failed items.');
     } else {
       await sbFetch('orders?id=eq.'+orderId, {method:'PATCH', body: JSON.stringify({prepare_data: {...prepareData, _stocked:true}})});
-      localStorage.removeItem(stockAppliedKey(orderId));
       alert('Stock updated for this order.');
     }
   } catch(e){
