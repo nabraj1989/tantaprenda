@@ -21,7 +21,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);
 .client-bar{background:var(--warm);border-bottom:1px solid var(--border);padding:9px 13px;display:flex;gap:7px;flex-wrap:wrap;}
 .cf{display:flex;flex-direction:column;gap:2px;flex:1;min-width:110px;}
 .cf label{font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;}
-.cf input{border:1px solid var(--border);border-radius:7px;padding:6px 9px;font-family:'DM Sans',sans-serif;font-size:13px;background:#fff;color:var(--text);width:100%;}
+.cf input{border:1px solid var(--border);border-radius:7px;padding:6px 9px;font-family:'DM Sans',sans-serif;font-size:16px;background:#fff;color:var(--text);width:100%;}
 .cf input:focus{outline:none;border-color:var(--gold);}
 .tabs-wrap{background:var(--dark);overflow-x:auto;scrollbar-width:none;}
 .tabs-wrap::-webkit-scrollbar{display:none;}
@@ -34,10 +34,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);
 .tv{font-weight:700;color:var(--gold);}
 .main{padding:10px 8px;max-width:960px;margin:0 auto;}
 .sec-title{font-family:'Playfair Display',serif;font-size:16px;color:var(--dark);margin-bottom:7px;}
-.srch{width:100%;border:1px solid var(--border);border-radius:7px;padding:7px 10px;font-family:'DM Sans',sans-serif;font-size:13px;background:#fff;margin-bottom:7px;}
+.srch{width:100%;border:1px solid var(--border);border-radius:7px;padding:7px 10px;font-family:'DM Sans',sans-serif;font-size:16px;background:#fff;margin-bottom:7px;}
 .srch:focus{outline:none;border-color:var(--gold);}
 .si-lbl{font-size:9px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;}
-.si-box{width:100%;border:1px solid var(--border);border-radius:7px;padding:7px 10px;font-family:'DM Sans',sans-serif;font-size:12px;background:#fff;margin-bottom:10px;resize:vertical;min-height:40px;color:var(--text);}
+.si-box{width:100%;border:1px solid var(--border);border-radius:7px;padding:7px 10px;font-family:'DM Sans',sans-serif;font-size:16px;background:#fff;margin-bottom:10px;resize:vertical;min-height:40px;color:var(--text);}
 .si-box:focus{outline:none;border-color:var(--gold);}
 .sub-t{font-family:'Playfair Display',serif;font-size:13px;margin:14px 0 6px;color:var(--dark);padding-bottom:4px;border-bottom:1px solid var(--border);}
 /* GRIDS */
@@ -1147,7 +1147,7 @@ function renderPage(){
         <div style="font-size:8px;color:var(--red);font-weight:600;text-transform:uppercase;letter-spacing:.3px;margin-bottom:3px;">\u21a9 Number of pieces to be returned / <em>N\u00famero de Pe\u00e7as a Devolver</em></div>
         <input id="prep-returns" type="tel" inputmode="numeric" pattern="[0-9]*" placeholder="0" value="${catReturns[curTab]||''}"
           oninput="catReturns[curTab]=parseInt(this.value)||0;updatePageTotals()"
-          style="width:100%;border:1px solid var(--red);border-radius:6px;padding:4px;font-size:13px;font-weight:700;text-align:center;font-family:'DM Sans',sans-serif;color:var(--red);background:#fff9f9;">
+          style="width:100%;border:1px solid var(--red);border-radius:6px;padding:4px;font-size:16px;font-weight:700;text-align:center;font-family:'DM Sans',sans-serif;color:var(--red);background:#fff9f9;">
       </div>
     </div>`;
 
@@ -1187,7 +1187,7 @@ function renderPage(){
         <div style="font-size:8px;color:var(--red);font-weight:600;text-transform:uppercase;letter-spacing:.3px;margin-bottom:3px;">\u21a9 Number of pieces to be returned / <em>N\u00famero de Pe\u00e7as a Devolver</em></div>
         <input id="order-returns" type="tel" inputmode="numeric" pattern="[0-9]*" placeholder="0" value="${catReturns[curTab]||''}"
           oninput="catReturns[curTab]=parseInt(this.value)||0;updatePageTotals()"
-          style="width:100%;border:1px solid var(--red);border-radius:6px;padding:4px;font-size:13px;font-weight:700;text-align:center;font-family:'DM Sans',sans-serif;color:var(--red);background:#fff9f9;">
+          style="width:100%;border:1px solid var(--red);border-radius:6px;padding:4px;font-size:16px;font-weight:700;text-align:center;font-family:'DM Sans',sans-serif;color:var(--red);background:#fff9f9;">
       </div>
     </div>`;
     html+='<input class="srch" placeholder="Search…" oninput="doSearch(this.value)">';
