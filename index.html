@@ -178,7 +178,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);
 .mode-btn.inactive{background:transparent;color:var(--muted);border:1px solid #444;}
 .page-tots{background:#0f0a04;color:#fff;padding:5px 13px;display:flex;gap:14px;font-size:11px;border-bottom:1px solid #333;}
 /* PREPARE CARDS */
-.prep-card{background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:7px;display:flex;flex-direction:column;gap:4px;}
+.prep-card{background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:7px;display:flex;flex-direction:column;gap:4px;min-width:0;}
 .prep-card.has-order{border-color:var(--gold);}
 .prep-card .pname{font-size:11px;font-weight:600;line-height:1.25;}
 .prep-card .pcode{font-size:9px;color:var(--muted);}
@@ -1556,12 +1556,12 @@ function prepCardH(p){
   return `<div class="prep-card has-order${lsc}" id="pc-${p.id}">
     <div class="pname">${p.name}</div>
     ${p.code ? `<div class="pcode">${p.code}</div>` : ''}
-    <div style="display:flex;gap:4px;align-items:center;margin-top:3px;">
-      <div style="display:flex;flex-direction:column;align-items:center;flex:1;">
+    <div style="display:flex;gap:4px;align-items:center;margin-top:3px;min-width:0;">
+      <div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:0;">
         <span class="prep-lbl">Ordered</span>
         <span class="prep-val ordered" style="font-size:14px;">${ordered}</span>
       </div>
-      <div style="display:flex;flex-direction:column;align-items:center;flex:1;">
+      <div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:0;">
         <span class="prep-lbl">Available</span>
         <button class="prep-input avail-inp" onclick="openQtyPopup('${p.id}','prepare')" style="width:100%;cursor:pointer;">${avail}</button>
       </div>
