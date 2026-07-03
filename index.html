@@ -58,8 +58,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);
 .qrow{display:flex;gap:3px;align-items:center;margin-top:2px;}
 .qb{background:var(--warm);border:1px solid var(--border);border-radius:5px;padding:3px 7px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;min-width:26px;text-align:center;}
 .qb.on,.qb:active{background:var(--gold);color:var(--dark);border-color:var(--gold);}
-.qi{border:1px solid var(--border);border-radius:5px;padding:3px 2px;width:32px;font-size:11px;text-align:center;font-family:'DM Sans',sans-serif;}
-.qi:focus{outline:none;border-color:var(--gold);}
 .oos-btn{font-size:9px;color:var(--muted);background:none;border:none;cursor:pointer;padding:0;text-align:left;}
 .oos-lbl{font-size:9px;color:var(--red);font-weight:600;cursor:pointer;}
 /* PANEL */
@@ -142,6 +140,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);
 .pin-input{border:2px solid var(--border);border-radius:10px;padding:12px;font-size:24px;font-weight:700;text-align:center;width:100%;letter-spacing:8px;font-family:'DM Sans',sans-serif;margin-bottom:12px;}
 .pin-input:focus{outline:none;border-color:var(--gold);}
 .pin-btn{width:100%;background:var(--gold);color:var(--dark);border:none;border-radius:10px;padding:12px;font-size:15px;font-weight:700;cursor:pointer;}
+/* QTY PICKER POPUP */
+.qty-picker-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:16px 0;}
+.qty-picker-grid button{background:var(--warm);border:1px solid var(--border);border-radius:10px;padding:14px 0;font-size:17px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--text);}
+.qty-picker-grid button:active{background:var(--gold);}
 .pin-err{color:var(--red);font-size:12px;margin-top:6px;display:none;}
 .pin-cancel{color:var(--muted);font-size:12px;cursor:pointer;margin-top:10px;display:block;}
 /* ORDERS PANEL */
@@ -283,6 +285,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);
     <button class="pin-btn" onclick="checkPin()">Enter</button>
     <span class="pin-err" id="pin-err">Incorrect PIN. Try again.</span>
     <span class="pin-cancel" onclick="closePinDialog()">Cancel</span>
+  </div>
+</div>
+<!-- QTY PICKER POPUP (Order & Prepare modes only) -->
+<div class="pin-overlay" id="qty-overlay" onclick="if(event.target===this) closeQtyPopup()">
+  <div class="pin-box">
+    <h3 id="qty-popup-title">Select quantity</h3>
+    <div class="qty-picker-grid" id="qty-popup-grid"></div>
+    <span class="pin-cancel" onclick="closeQtyPopup()">Cancel</span>
   </div>
 </div>
 <!-- ORDERS PANEL -->
@@ -1059,7 +1069,7 @@ function cardH(p){
     <div class="qrow">
       <button class="qb${q===1?' on':''}" onclick="sq('${p.id}',1)">1</button>
       <button class="qb${q===2?' on':''}" onclick="sq('${p.id}',2)">2</button>
-      <input class="qi" type="tel" inputmode="numeric" pattern="[0-9]*" placeholder="…" value="${q>2?q:''}" oninput="sqc('${p.id}',this.value)">
+      <button class="qb${q>2?' on':''}" onclick="openQtyPopup('${p.id}','order')">${q>2?q:'…'}</button>
     </div>
     ${(isGB||isStand)?'':(appMode==='prepare'?(isOos?`<span class="oos-lbl" onclick="toos('${p.id}')">⚠ Out of stock</span>`:`<button class="oos-btn" onclick="toos('${p.id}')">Mark OOS</button>`):'')}
   </div>`;
@@ -1209,19 +1219,60 @@ function sq(id,qty){
   if(!order[id]) delete order[id];
   refreshCard(id);updateTotals();updatePanel();renderTabs();updatePageTotals();
 }
-function sqc(id,val){
-  const n=parseInt(val);
-  if(!n||n<=0) delete order[id]; else order[id]=n;
-  const el=document.getElementById(`c-${id}`);
-  if(el){el.classList.toggle('on',(order[id]||0)>0);el.querySelectorAll('.qb').forEach((b,i)=>b.classList.toggle('on',order[id]===i+1));}
-  updateTotals();updatePanel();renderTabs();
+// ─── QTY PICKER POPUP (Order & Prepare modes) ─────────────────────────────────
+// Replaces free-typed numbers for 3+ with tap-to-pick buttons — typing a number
+// on mobile zooms the page in, tapping a button doesn't.
+let qtyPopupTarget = null; // {id, mode:'order'|'prepare'}
+
+function openQtyPopup(id, mode){
+  qtyPopupTarget = {id, mode};
+  const title = document.getElementById('qty-popup-title');
+  const grid = document.getElementById('qty-popup-grid');
+  let options;
+  if(mode==='order'){
+    options = [3,4,5,6,7,8];
+    if(title) title.textContent = 'Select quantity';
+  } else {
+    const ordered = order[id] || 0;
+    options = [];
+    for(let i=0;i<=ordered;i++) options.push(i);
+    if(title) title.textContent = 'Select available quantity';
+  }
+  grid.innerHTML = options.map(n=>`<button onclick="pickQtyPopup(${n})">${n}</button>`).join('');
+  document.getElementById('qty-overlay').classList.add('open');
 }
+
+function closeQtyPopup(){
+  document.getElementById('qty-overlay').classList.remove('open');
+  qtyPopupTarget = null;
+}
+
+function pickQtyPopup(val){
+  if(!qtyPopupTarget) return;
+  const {id, mode} = qtyPopupTarget;
+  if(mode==='order'){
+    if(val<=0) delete order[id]; else order[id]=val;
+    refreshCard(id);updateTotals();updatePanel();renderTabs();updatePageTotals();
+  } else {
+    setPrep(id,'avail',val);
+    refreshPrepCard(id);
+  }
+  closeQtyPopup();
+}
+
 function refreshCard(id){
   const el=document.getElementById(`c-${id}`);if(!el) return;
   let p=LK[id];
   if(!p&&id.startsWith('gb-')) p={id,name:'🎁 Gift Box',code:'',isGB:true,catName:'Gift Box',catShort:'GB'};
   if(!p) return;
   const tmp=document.createElement('div');tmp.innerHTML=cardH(p);el.replaceWith(tmp.firstChild);
+}
+function refreshPrepCard(id){
+  const el=document.getElementById(`pc-${id}`);if(!el) return;
+  let p=LK[id];
+  if(!p&&id.startsWith('gb-')) p={id,name:'Gift Box',code:'',isGB:true,catName:'Gift Box',catShort:'GB'};
+  if(!p) return;
+  const tmp=document.createElement('div');tmp.innerHTML=prepCardH(p);if(tmp.firstChild) el.replaceWith(tmp.firstChild);
 }
 function toos(id){
   if(oos[id]) delete oos[id]; else{oos[id]=true;delete order[id];}
@@ -1512,8 +1563,7 @@ function prepCardH(p){
       </div>
       <div style="display:flex;flex-direction:column;align-items:center;flex:1;">
         <span class="prep-lbl">Available</span>
-        <input class="prep-input avail-inp" type="tel" inputmode="numeric" pattern="[0-9]*" value="${avail}"
-          oninput="setPrep('${p.id}','avail',this.value)" style="width:100%;text-align:center;">
+        <button class="prep-input avail-inp" onclick="openQtyPopup('${p.id}','prepare')" style="width:100%;cursor:pointer;">${avail}</button>
       </div>
     </div>
   </div>`;
