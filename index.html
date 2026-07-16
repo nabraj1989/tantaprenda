@@ -324,6 +324,16 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);
     </div>
   </div>
 </div>
+<!-- BENDY BOT LETTER-SUBSTITUTION NOTICE -->
+<div class="cw" id="bendy-notice-overlay">
+  <div class="cb" style="max-width:320px;">
+    <h3>Aviso importante</h3>
+    <p style="text-align:left;">Alguns nomes foram substituídos por letras soltas (A a Z, exceto Q, U, X e Y) devido à baixa procura. Se o nome do seu pedido não estiver mais disponível, ele pode agora ser uma letra. Confira bem antes de finalizar o pedido.</p>
+    <div class="cr" style="margin-top:14px;">
+      <button class="co" style="flex:1;" onclick="ackBendyNotice()">OK, entendi</button>
+    </div>
+  </div>
+</div>
 <script>
 // ─── DATA (exact order + exact codes from forms) ───────────────────────────
 
@@ -382,25 +392,25 @@ const HP = [
 ].map(([n,name])=>({id:`hp-${n}`,name,code:`HP${String(n).padStart(3,'0')}`,isGeneric:HP_GENERIC.has(name)}));
 
 // Bendy Bot: 162 items — exact order from form p3
-const RB_GENERIC = new Set(['Blank Blue','Blank Pink','Blank Yellow','Blank Red',"I'm a Star",'Stuck On You','Super Mum','Super Dad','G/Daughter','Grandson','Best Friend','I ❤ U','Bendy Bot','Fidget Fight.','Super Hero']);
+const RB_GENERIC = new Set(['Blank Blue','Blank Pink','Blank Yellow','Blank Red',"I'm a Star",'Super Mum','Super Dad','G/Daughter','Grandson','Best Friend','I ❤ U','Bendy Bot','Fidget Fight.','Super Hero']);
 const RB = [
-  [1,'Blank Blue'],[2,'Blank Pink'],[3,'Blank Yellow'],[4,'Blank Red'],[5,'I\'m a Star'],[6,'Stuck On You'],[7,'Abigail'],[8,'Ada'],[9,'Albie'],[10,'Alex'],
+  [1,'Blank Blue'],[2,'Blank Pink'],[3,'Blank Yellow'],[4,'Blank Red'],[5,'I\'m a Star'],[6,'A'],[7,'Abigail'],[8,'Ada'],[9,'Albie'],[10,'Alex'],
   [11,'Alfie'],[12,'Alice'],[13,'Amber'],[14,'Amelia'],[15,'Amelie'],[16,'Anna'],[17,'Annabelle'],[18,'Arabella'],[19,'Archie'],[20,'Aria'],
-  [21,'Arlo'],[22,'Arthur'],[23,'Aurora'],[24,'Ava'],[25,'Ayla'],[26,'Bella'],[27,'Ben'],[28,'Benjamin'],[29,'Bonnie'],[30,'Charlie'],
-  [31,'Charlotte'],[32,'Chloe'],[33,'Clara'],[34,'Daisy'],[35,'Daniel'],[36,'Darcie'],[37,'Delilah'],[38,'Edward'],[39,'Elijah'],[40,'Eliza'],
+  [21,'Arlo'],[22,'Arthur'],[23,'Aurora'],[24,'Ava'],[25,'B'],[26,'Bella'],[27,'Ben'],[28,'Benjamin'],[29,'Bonnie'],[30,'Charlie'],
+  [31,'C'],[32,'Chloe'],[33,'Clara'],[34,'Daisy'],[35,'Daniel'],[36,'D'],[37,'Delilah'],[38,'Edward'],[39,'Elijah'],[40,'E'],
   [41,'Ella'],[42,'Ellie'],[43,'Elsie'],[44,'Emilia'],[45,'Emily'],[46,'Emma'],[47,'Erin'],[48,'Esme'],[49,'Ethan'],[50,'Eva'],
-  [51,'Evelyn'],[52,'Evie'],[53,'Finley'],[54,'Florence'],[55,'Super Mum'],[56,'Super Dad'],[57,'G/Daughter'],[58,'Grandson'],[59,'Best Friend'],[60,'I ❤ U'],
-  [61,'Freddie'],[62,'Freya'],[63,'George'],[64,'Georgia'],[65,'Grace'],[66,'Gracie'],[67,'Hallie'],[68,'Hannah'],[69,'Harper'],[70,'Harriet'],
-  [71,'Harrison'],[72,'Harry'],[73,'Heidi'],[74,'Henry'],[75,'Holly'],[76,'Hugo'],[77,'Imogen'],[78,'Iris'],[79,'Isaac'],[80,'Isabella'],
-  [81,'Isabelle'],[82,'Isla'],[83,'Ivy'],[84,'Izzy'],[85,'Jack'],[86,'Jacob'],[87,'James'],[88,'Jasmine'],[89,'Jess'],[90,'Jessica'],
-  [91,'Joseph'],[92,'Joshua'],[93,'Jude'],[94,'Lara'],[95,'Layla'],[96,'Leo'],[97,'Lexi'],[98,'Lilly'],[99,'Lily'],[100,'Logan'],
+  [51,'Evelyn'],[52,'F'],[53,'Finley'],[54,'Florence'],[55,'Super Mum'],[56,'Super Dad'],[57,'G/Daughter'],[58,'Grandson'],[59,'Best Friend'],[60,'I ❤ U'],
+  [61,'Freddie'],[62,'Freya'],[63,'George'],[64,'G'],[65,'Grace'],[66,'Gracie'],[67,'H'],[68,'Hannah'],[69,'Harper'],[70,'Harriet'],
+  [71,'Harrison'],[72,'Harry'],[73,'Heidi'],[74,'Henry'],[75,'Holly'],[76,'Hugo'],[77,'Imogen'],[78,'I'],[79,'Isaac'],[80,'Isabella'],
+  [81,'Isabelle'],[82,'Isla'],[83,'Ivy'],[84,'Izzy'],[85,'Jack'],[86,'Jacob'],[87,'James'],[88,'J'],[89,'Jess'],[90,'Jessica'],
+  [91,'Joseph'],[92,'Joshua'],[93,'Jude'],[94,'K'],[95,'L'],[96,'Leo'],[97,'Lexi'],[98,'Lilly'],[99,'Lily'],[100,'Logan'],
   [101,'Lola'],[102,'Lottie'],[103,'Louie'],[104,'Luca'],[105,'Lucas'],[106,'Lucy'],[107,'Luna'],[108,'Lyla'],[109,'Bendy Bot'],[110,'Fidget Fight.'],
-  [111,'Super Hero'],[112,'Mabel'],[113,'Maisie'],[114,'Margot'],[115,'Martha'],[116,'Mason'],[117,'Matilda'],[118,'Max'],[119,'Maya'],[120,'Mia'],
-  [121,'Mila'],[122,'Millie'],[123,'Mollie'],[124,'Molly'],[125,'Nancy'],[126,'Noah'],[127,'Olive'],[128,'Oliver'],[129,'Olivia'],[130,'Orla'],
-  [131,'Oscar'],[132,'Penelope'],[133,'Phoebe'],[134,'Poppy'],[135,'Reuben'],[136,'Riley'],[137,'Robyn'],[138,'Roman'],[139,'Rory'],[140,'Rose'],
-  [141,'Rosie'],[142,'Ruby'],[143,'Sam'],[144,'Scarlett'],[145,'Seb'],[146,'Sienna'],[147,'Sofia'],[148,'Sophia'],[149,'Sophie'],[150,'Summer'],
-  [151,'Teddy'],[152,'Thea'],[153,'Theo'],[154,'Thomas'],[155,'Toby'],[156,'Tommy'],[157,'Violet'],[158,'William'],[159,'Willow'],[160,'Zachary'],
-  [161,'Zara'],[162,'Zoe']
+  [111,'Super Hero'],[112,'M'],[113,'Maisie'],[114,'Margot'],[115,'Martha'],[116,'Mason'],[117,'Matilda'],[118,'Max'],[119,'Maya'],[120,'Mia'],
+  [121,'Mila'],[122,'Millie'],[123,'Mollie'],[124,'Molly'],[125,'N'],[126,'Noah'],[127,'O'],[128,'Oliver'],[129,'Olivia'],[130,'Orla'],
+  [131,'Oscar'],[132,'P'],[133,'Phoebe'],[134,'Poppy'],[135,'Reuben'],[136,'R'],[137,'Robyn'],[138,'Roman'],[139,'Rory'],[140,'Rose'],
+  [141,'Rosie'],[142,'Ruby'],[143,'Sam'],[144,'S'],[145,'Seb'],[146,'Sienna'],[147,'Sofia'],[148,'Sophia'],[149,'Sophie'],[150,'Summer'],
+  [151,'Teddy'],[152,'Thea'],[153,'Theo'],[154,'T'],[155,'Toby'],[156,'Tommy'],[157,'V'],[158,'William'],[159,'W'],[160,'Zachary'],
+  [161,'Zara'],[162,'Z']
 ].map(([n,name])=>({id:`rb-${n}`,name,code:`RB${String(n).padStart(3,'0')}`,isGeneric:RB_GENERIC.has(name)}));
 
 // Signtastic Signs — exact codes from form p4
@@ -1098,7 +1108,32 @@ function renderTabs(){
     return `<div class="tab${cat.id===curTab?' active':''}" onclick="sw('${cat.id}')">${tabLabel}${units>0?`<br><span class="bdg">${units}</span>`:''}</div>`;
   }).join('');
 }
-function sw(id){curTab=id;renderTabs();renderPage();updatePageTotals();}
+function sw(id){
+  curTab=id;renderTabs();renderPage();updatePageTotals();
+  if(id==='rb' && appMode==='order' && !bendyNoticeAcked()) showBendyNotice();
+}
+
+// ─── BENDY BOT LETTER-SUBSTITUTION NOTICE ─────────────────────────────────────
+// Bump the version suffix if the notice text changes, so returning customers
+// who already acknowledged the old wording see it again.
+const BENDY_NOTICE_KEY = 'bendybot_letter_notice_ack_v1';
+let bendyNoticePendingAction = null;
+function bendyNoticeAcked(){
+  try{ return localStorage.getItem(BENDY_NOTICE_KEY)==='1'; }catch(e){ return false; }
+}
+function orderHasBendyItems(){
+  return Object.keys(order).some(id=>id.startsWith('rb-') && (order[id]||0)>0);
+}
+function showBendyNotice(afterAck){
+  bendyNoticePendingAction = afterAck || null;
+  document.getElementById('bendy-notice-overlay').classList.add('open');
+}
+function ackBendyNotice(){
+  try{ localStorage.setItem(BENDY_NOTICE_KEY,'1'); }catch(e){}
+  document.getElementById('bendy-notice-overlay').classList.remove('open');
+  const next = bendyNoticePendingAction; bendyNoticePendingAction = null;
+  if(next) next();
+}
 
 // ─── PHONE BRACELET / TANTAPRENDA STAND ────────────────────────────────────────
 function renderPhone(cat){
@@ -1322,6 +1357,7 @@ function updatePanel(){
 
 // ─── WHATSAPP ─────────────────────────────────────────────────────────────────
 function sendWA(){
+  if(orderHasBendyItems() && !bendyNoticeAcked()){ showBendyNotice(sendWA); return; }
   const name=document.getElementById('cname').value.trim();
   const comp=document.getElementById('ccomp').value.trim();
   const phone=document.getElementById('cphone').value.trim();
