@@ -311,7 +311,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);
     <button class="orders-back" onclick="closeReceivePanel()">✕</button>
   </div>
   <div class="orders-list" id="receive-list"></div>
-  <button class="orders-refresh" onclick="applyReceiveStock()" style="background:#1a7a4a;">✅ Apply to Stock</button>
+  <button class="orders-refresh" id="apply-receive-btn" onclick="applyReceiveStock()" style="background:#1a7a4a;">✅ Apply to Stock</button>
 </div>
 <div class="cw" id="cw">
   <div class="cb">
@@ -1497,6 +1497,20 @@ function setStockDebounced(productId, productName, productCode, category, value)
   }, 500);
 }
 
+function markStockDirty(productId){
+  const inp = document.getElementById('stock-inp-'+productId);
+  if(inp) inp.style.borderColor = '';
+  const btn = document.getElementById('stock-ok-'+productId);
+  if(btn) btn.style.display = 'flex';
+}
+function confirmStock(productId, productName, productCode, category){
+  const inp = document.getElementById('stock-inp-'+productId);
+  if(!inp) return;
+  const btn = document.getElementById('stock-ok-'+productId);
+  if(btn) btn.style.display = 'none';
+  setStock(productId, productName, productCode, category, inp.value);
+  updateStockTotal(cat_id_global);
+}
 async function setStock(productId, productName, productCode, category, value){
   if(currentEmployee !== null) return; // only admin can update stock
   const newStock = Math.max(0, parseInt(value)||0);
@@ -2135,7 +2149,8 @@ function stockCardH(p){
     +'<div class="pname">'+p.name+'</div>'
     +(p.code ? '<div class="pcode">'+p.code+'</div>' : '')
     +'<div style="display:flex;gap:4px;align-items:center;margin-top:4px;">'
-    +(currentEmployee ? '<input class="stock-input" id="stock-inp-'+p.id+'" type="tel" placeholder="0" value="'+stock+'" readonly style="margin-top:0;flex:1;background:#f0f0f0;color:#999;cursor:not-allowed;">' : '<input class="stock-input" id="stock-inp-'+p.id+'" type="tel" inputmode="numeric" pattern="[0-9]*" placeholder="0" value="'+stock+'" style="margin-top:0;flex:1;" oninput="setStock(\''+p.id+'\',\''+nameEsc+'\',\''+codeEsc+'\',\''+p.catShort+'\',this.value);updateStockTotal(\''+cat_id_global+'\')">')
+    +(currentEmployee ? '<input class="stock-input" id="stock-inp-'+p.id+'" type="tel" placeholder="0" value="'+stock+'" readonly style="margin-top:0;flex:1;background:#f0f0f0;color:#999;cursor:not-allowed;">' : '<input class="stock-input" id="stock-inp-'+p.id+'" type="tel" inputmode="numeric" pattern="[0-9]*" placeholder="0" value="'+stock+'" style="margin-top:0;flex:1;" oninput="markStockDirty(\''+p.id+'\')" onkeydown="if(event.key===\'Enter\'){confirmStock(\''+p.id+'\',\''+nameEsc+'\',\''+codeEsc+'\',\''+p.catShort+'\');this.blur();}">')
+    +(currentEmployee===null ? '<button class="stock-ok-btn" id="stock-ok-'+p.id+'" onclick="confirmStock(\''+p.id+'\',\''+nameEsc+'\',\''+codeEsc+'\',\''+p.catShort+'\')" style="display:none;align-items:center;justify-content:center;background:#2e7d32;color:#fff;border:none;border-radius:6px;width:28px;height:28px;font-size:14px;font-weight:700;cursor:pointer;flex-shrink:0;">✓</button>' : '')
     +(currentEmployee===null ? '<button onclick="restockPrompt(\''+p.id+'\',\''+nameEsc+'\',\''+codeEsc+'\',\''+p.catShort+'\')" style="background:var(--gold);color:var(--dark);border:none;border-radius:6px;width:28px;height:28px;font-size:16px;font-weight:700;cursor:pointer;flex-shrink:0;">+</button>' : '')
     +'</div></div>';
 }
@@ -2467,36 +2482,46 @@ async function removeFromPending(id){
   openReceiveStock(); // refresh list
 }
 
+let applyingReceiveStock = false;
 async function applyReceiveStock(){
-  const entries = Object.entries(pendingRestock).filter(([,q])=>q>0);
-  if(!inventoryLoaded) await loadInventory();
+  if(applyingReceiveStock) return; // guard against double-tap re-entrancy re-adding stock twice
+  applyingReceiveStock = true;
+  const btn = document.getElementById('apply-receive-btn');
+  if(btn){ btn.disabled = true; btn.style.opacity = '0.6'; btn.style.cursor = 'not-allowed'; }
+  try {
+    const entries = Object.entries(pendingRestock).filter(([,q])=>q>0);
+    if(!inventoryLoaded) await loadInventory();
 
-  for(const [id,qty] of entries){
-    const checkbox = document.getElementById('recv-'+id);
-    const qtyInput = document.getElementById('recv-qty-'+id);
-    if(!checkbox || !checkbox.checked){
-      // Not received — keep in pending list for next time
-      continue;
+    for(const [id,qty] of entries){
+      const checkbox = document.getElementById('recv-'+id);
+      const qtyInput = document.getElementById('recv-qty-'+id);
+      if(!checkbox || !checkbox.checked){
+        // Not received — keep in pending list for next time
+        continue;
+      }
+      const receivedQty = parseInt(qtyInput.value)||0;
+      if(receivedQty>0){
+        const p = LK[id] || {name:'Unknown', code:'', catShort:''};
+        const current = inventory[id]||0;
+        const newStock = current + receivedQty;
+        inventory[id] = newStock;
+        await setStock(id, p.name, p.code||'', p.catShort||'', newStock);
+      }
+      // Item processed — remove from pending list entirely (no partial carryover)
+      delete pendingRestock[id];
+      try {
+        await sbFetch('pending_restock?product_id=eq.'+encodeURIComponent(id), {method:'DELETE'});
+      } catch(e){
+        console.error('Failed to clear pending restock entry for', id, e);
+      }
     }
-    const receivedQty = parseInt(qtyInput.value)||0;
-    if(receivedQty>0){
-      const p = LK[id] || {name:'Unknown', code:'', catShort:''};
-      const current = inventory[id]||0;
-      const newStock = current + receivedQty;
-      inventory[id] = newStock;
-      await setStock(id, p.name, p.code||'', p.catShort||'', newStock);
-    }
-    // Item processed — remove from pending list entirely (no partial carryover)
-    delete pendingRestock[id];
-    try {
-      await sbFetch('pending_restock?product_id=eq.'+encodeURIComponent(id), {method:'DELETE'});
-    } catch(e){
-      console.error('Failed to clear pending restock entry for', id, e);
-    }
+    closeReceivePanel();
+    renderPage(); // refresh restock view to update pending count and stock badges
+    alert('Stock updated!');
+  } finally {
+    applyingReceiveStock = false;
+    if(btn){ btn.disabled = false; btn.style.opacity = ''; btn.style.cursor = ''; }
   }
-  closeReceivePanel();
-  renderPage(); // refresh restock view to update pending count and stock badges
-  alert('Stock updated!');
 }
 
 // ─── EMPLOYEE LOGIN ───────────────────────────────────────────────────────────
