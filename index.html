@@ -326,11 +326,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);
 </div>
 <!-- BENDY BOT LETTER-SUBSTITUTION NOTICE -->
 <div class="cw" id="bendy-notice-overlay">
-  <div class="cb" style="max-width:320px;">
-    <h3>Aviso importante</h3>
-    <p style="text-align:left;">Alguns nomes foram substituídos por letras soltas (A a Z, exceto Q, U, X e Y) devido à baixa procura. Se o nome do seu pedido não estiver mais disponível, ele pode agora ser uma letra. Confira bem antes de finalizar o pedido.</p>
+  <div class="cb" style="max-width:360px;">
+    <h3 style="font-size:22px;">Aviso importante</h3>
+    <p style="text-align:left;font-size:16px;line-height:1.45;">Alguns nomes foram substituídos por letras soltas (A - Z, exceto Q, U, X &amp; Y) devido à baixa procura. Se o nome do seu pedido não estiver mais disponível, ele pode agora ser uma letra. Confira bem antes de finalizar o pedido.</p>
     <div class="cr" style="margin-top:14px;">
-      <button class="co" style="flex:1;" onclick="ackBendyNotice()">OK, entendi</button>
+      <button class="co" style="flex:1;font-size:15px;padding:11px;" onclick="ackBendyNotice()">OK, entendi</button>
     </div>
   </div>
 </div>
@@ -1110,17 +1110,14 @@ function renderTabs(){
 }
 function sw(id){
   curTab=id;renderTabs();renderPage();updatePageTotals();
-  if(id==='rb' && appMode==='order' && !bendyNoticeAcked()) showBendyNotice();
+  if(id==='rb' && appMode==='order'){ bendyNoticeAcked = false; showBendyNotice(); }
 }
 
 // ─── BENDY BOT LETTER-SUBSTITUTION NOTICE ─────────────────────────────────────
-// Bump the version suffix if the notice text changes, so returning customers
-// who already acknowledged the old wording see it again.
-const BENDY_NOTICE_KEY = 'bendybot_letter_notice_ack_v1';
+// Shown every time the customer opens the Bendy Bot tab (no "don't show again" —
+// intentional, so it stays visible on every visit, not just localStorage-remembered).
+let bendyNoticeAcked = false;
 let bendyNoticePendingAction = null;
-function bendyNoticeAcked(){
-  try{ return localStorage.getItem(BENDY_NOTICE_KEY)==='1'; }catch(e){ return false; }
-}
 function orderHasBendyItems(){
   return Object.keys(order).some(id=>id.startsWith('rb-') && (order[id]||0)>0);
 }
@@ -1129,7 +1126,7 @@ function showBendyNotice(afterAck){
   document.getElementById('bendy-notice-overlay').classList.add('open');
 }
 function ackBendyNotice(){
-  try{ localStorage.setItem(BENDY_NOTICE_KEY,'1'); }catch(e){}
+  bendyNoticeAcked = true;
   document.getElementById('bendy-notice-overlay').classList.remove('open');
   const next = bendyNoticePendingAction; bendyNoticePendingAction = null;
   if(next) next();
@@ -1357,7 +1354,7 @@ function updatePanel(){
 
 // ─── WHATSAPP ─────────────────────────────────────────────────────────────────
 function sendWA(){
-  if(orderHasBendyItems() && !bendyNoticeAcked()){ showBendyNotice(sendWA); return; }
+  if(orderHasBendyItems() && !bendyNoticeAcked){ showBendyNotice(sendWA); return; }
   const name=document.getElementById('cname').value.trim();
   const comp=document.getElementById('ccomp').value.trim();
   const phone=document.getElementById('cphone').value.trim();
@@ -1399,8 +1396,6 @@ function sendWA(){
   saveOrderToSupabase(name, comp, phone);
   // Add prepare link to message
   msg += `\n\n🔗 Prepare: https://tantaprenda.netlify.app?orders`;
-  // Open both numbers synchronously (same click) so neither gets blocked
-  openWA('https://wa.me/351920251390?text='+encodeURIComponent(msg));
   openWA('https://wa.me/351917516301?text='+encodeURIComponent(msg));
 }
 
