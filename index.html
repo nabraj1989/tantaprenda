@@ -201,26 +201,50 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);
 .cg-mark{font-size:16px;}
 .cg-section-title{font-family:'Playfair Display',serif;font-size:16px;color:var(--dark);}
 .cg-section-sub{font-family:'DM Sans',sans-serif;font-style:italic;font-size:11px;color:var(--muted);margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border);}
-.cg-grid{display:flex;flex-direction:column;gap:0;margin-bottom:8px;}
-.cg-card{position:relative;padding:16px 2px;border-bottom:1px solid var(--border);background:var(--card);}
-.cg-card:first-child{padding-top:4px;}
+.cg-grid{display:flex;flex-direction:column;gap:18px;margin-bottom:8px;}
+.cg-card{position:relative;padding:16px 14px;border-radius:14px;background:var(--card);border:1px solid var(--border);box-shadow:0 1px 2px rgba(26,18,8,.06),0 6px 16px -10px rgba(26,18,8,.18);}
 .cg-name-en{font-family:'Playfair Display',serif;font-size:16px;font-weight:600;line-height:1.3;color:var(--dark);text-align:center;}
-.cg-name-pt{font-style:italic;font-size:11.5px;color:var(--muted);margin-top:2px;text-align:center;margin-bottom:12px;}
+.cg-name-pt{font-style:italic;font-size:11.5px;color:var(--muted);margin-top:2px;text-align:center;}
+.cg-price-row{display:flex;justify-content:center;margin:8px 0 12px;}
+.cg-price{display:inline-flex;align-items:center;gap:5px;background:var(--warm);border:1px solid var(--gold);color:var(--gold-deep);font-family:'DM Sans',sans-serif;font-size:11px;font-weight:700;letter-spacing:.2px;padding:4px 13px;border-radius:20px;white-space:nowrap;}
 .cg-row{display:flex;gap:10px;align-items:flex-start;justify-content:center;}
 .cg-shot-wrap{position:relative;flex:1 1 0;max-width:47%;}
-.cg-shot{width:100%;height:min(48vw,270px);display:flex;align-items:center;justify-content:center;border-radius:10px;overflow:hidden;}
+.cg-shot{width:100%;height:min(48vw,270px);display:flex;align-items:center;justify-content:center;border-radius:10px;overflow:hidden;background:var(--warm);}
 .cg-shot img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;}
 .cg-shot-cap{font-family:'DM Sans',sans-serif;font-size:8.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;text-align:center;margin-top:5px;}
 .cg-shot-cap em{font-style:italic;}
 .cg-ribbon{position:absolute;top:6px;left:6px;background:var(--gold);color:var(--dark);font-size:8px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;padding:2px 7px;border-radius:20px;z-index:2;}
 .cg-ribbon.clearance{background:var(--red);color:#fff;}
-.cg-info{padding-top:12px;}
-.cg-variants-lbl{font-family:'DM Sans',sans-serif;font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px;text-align:center;}
+.cg-info{padding-top:14px;margin-top:2px;border-top:1px solid var(--border);}
+.cg-variants-lbl{font-family:'DM Sans',sans-serif;font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px;text-align:center;}
 .cg-variants-lbl em{font-style:italic;}
-.cg-variants-list{display:grid;grid-template-columns:1fr 1fr;column-gap:12px;}
-.cg-vitem{font-size:11px;color:var(--text);padding:3px 0;border-top:1px solid var(--border);}
-.cg-vitem:nth-child(-n+2){border-top:none;}
+.cg-variants-list{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;}
+.cg-vitem{font-size:10.5px;line-height:1.3;color:var(--text);background:var(--warm);border:1px solid var(--border);border-radius:13px;padding:4px 10px;}
 .cg-stub{border:1.5px dashed var(--border);border-radius:10px;padding:14px 12px;text-align:center;font-size:11px;color:var(--muted);font-style:italic;margin-bottom:8px;}
+
+/* shared contact card, appended under every catalogue section */
+.cg-contact{background:var(--dark);color:#f5ede0;border-radius:14px;padding:20px 18px;margin:26px 0 8px;text-align:center;}
+.cg-contact .cg-c-title{font-family:'Playfair Display',serif;font-size:16px;color:var(--gold);margin-bottom:3px;}
+.cg-contact .cg-c-sub{font-size:11px;font-style:italic;color:#cbb98a;margin-bottom:14px;}
+.cg-contact .cg-c-lines{font-family:'DM Sans',sans-serif;font-size:12.5px;line-height:1.9;}
+.cg-contact .cg-c-lines a{color:#fff;text-decoration:none;font-weight:600;}
+.cg-contact .cg-c-lines a:hover{color:var(--gold);}
+
+/* clearance promo banner */
+.cg-promo{display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,var(--red),#953226);color:#fff;border-radius:14px;padding:14px 16px;margin-bottom:18px;box-shadow:0 6px 16px -10px rgba(192,57,43,.5);}
+.cg-promo .cg-promo-ic{font-size:22px;flex:none;}
+.cg-promo .cg-promo-txt{font-size:12.5px;line-height:1.5;}
+.cg-promo .cg-promo-txt b{font-family:'Playfair Display',serif;font-size:14.5px;display:block;margin-bottom:2px;}
+.cg-promo .cg-promo-txt a{color:#fff;text-decoration:underline;}
+
+/* Full Range tab — one full catalogue page per product, price baked into the photo */
+.fr-grid{display:flex;flex-direction:column;gap:22px;margin-bottom:8px;}
+.fr-card{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:0 1px 2px rgba(26,18,8,.06),0 6px 16px -10px rgba(26,18,8,.18);}
+.fr-head{padding:12px 14px 10px;text-align:center;border-bottom:1px solid var(--border);}
+.fr-name-en{font-family:'Playfair Display',serif;font-size:15px;font-weight:600;color:var(--dark);}
+.fr-name-pt{font-style:italic;font-size:11px;color:var(--muted);margin-top:2px;}
+.fr-shot{width:100%;background:var(--warm);}
+.fr-shot img{display:block;width:100%;height:auto;}
 
 </style>
 </head>
@@ -366,6 +390,27 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);
 </div>
 <script>
 // ─── DATA (exact order + exact codes from forms) ───────────────────────────
+
+// Glass Bird Suncatcher: 144 items — from order form (GLASS BIRD SUNCATCHER.xlsx),
+// read top-to-bottom down each of the form's 8 name columns, left→right.
+const GS_GENERIC = new Set(['Blank - Pink','Blank - Blue','Loved','Friend','Mum','Nana','Grandma','Sister']);
+const GS = [
+  [1,'Blank - Pink'],[2,'Blank - Blue'],[3,'Loved'],[4,'Friend'],[5,'Alice'],[6,'Alison'],[7,'Amanda'],[8,'Amy'],[9,'Andrea'],[10,'Angela'],
+  [11,'Anita'],[12,'Ann'],[13,'Anna'],[14,'Anne'],[15,'Barbara'],[16,'Becky'],[17,'Beth'],[18,'Betty'],[19,'Bev'],[20,'Brenda'],
+  [21,'Carol'],[22,'Caroline'],[23,'Cath'],[24,'Catherine'],[25,'Charlotte'],[26,'Cheryl'],[27,'Chloe'],[28,'Chris'],[29,'Christine'],[30,'Claire'],
+  [31,'Clare'],[32,'Danielle'],[33,'Dawn'],[34,'Debbie'],[35,'Deborah'],[36,'Denise'],[37,'Mum'],[38,'Nana'],[39,'Grandma'],[40,'Sister'],
+  [41,'Diane'],[42,'Donna'],[43,'Eileen'],[44,'Elaine'],[45,'Elizabeth'],[46,'Emily'],[47,'Emma'],[48,'Fiona'],[49,'Gail'],[50,'Gemma'],
+  [51,'Georgina'],[52,'Gill'],[53,'Gillian'],[54,'Hannah'],[55,'Hayley'],[56,'Hazel'],[57,'Heather'],[58,'Helen'],[59,'Jackie'],[60,'Jan'],
+  [61,'Jane'],[62,'Janet'],[63,'Jean'],[64,'Jen'],[65,'Jenny'],[66,'Jessica'],[67,'Jill'],[68,'Jo'],[69,'Joan'],[70,'Joanna'],
+  [71,'Joanne'],[72,'Julia'],[73,'Julie'],[74,'June'],[75,'Karen'],[76,'Kate'],[77,'Kath'],[78,'Katherine'],[79,'Kathleen'],[80,'Kathryn'],
+  [81,'Katie'],[82,'Kay'],[83,'Kelly'],[84,'Kerry'],[85,'Kim'],[86,'Kirsty'],[87,'Laura'],[88,'Lauren'],[89,'Leanne'],[90,'Lesley'],
+  [91,'Linda'],[92,'Lindsey'],[93,'Lisa'],[94,'Liz'],[95,'Lorraine'],[96,'Louise'],[97,'Lucy'],[98,'Lynn'],[99,'Maggie'],[100,'Mandy'],
+  [101,'Margaret'],[102,'Maria'],[103,'Marie'],[104,'Mary'],[105,'Maureen'],[106,'Megan'],[107,'Mel'],[108,'Michelle'],[109,'Natalie'],[110,'Nicky'],
+  [111,'Nicola'],[112,'Pam'],[113,'Pat'],[114,'Patricia'],[115,'Paula'],[116,'Pauline'],[117,'Rachael'],[118,'Rachel'],[119,'Rebecca'],[120,'Rose'],
+  [121,'Ruth'],[122,'Sally'],[123,'Sam'],[124,'Sandra'],[125,'Sara'],[126,'Sarah'],[127,'Sharon'],[128,'Sheila'],[129,'Shirley'],[130,'Sophie'],
+  [131,'Stacey'],[132,'Steph'],[133,'Sue'],[134,'Susan'],[135,'Suzanne'],[136,'Sylvia'],[137,'Tina'],[138,'Tracey'],[139,'Tracy'],[140,'Val'],
+  [141,'Vicky'],[142,'Wendy'],[143,'Yvonne'],[144,'Zoe']
+].map(([n,name])=>({id:`gs-${n}`,name,code:`GS${String(n).padStart(3,'0')}`,isGeneric:GS_GENERIC.has(name)}));
 
 // Garden Signs: 162 items, columns read left→right across 4 cols per row
 // Form numbering: Mum=1,Dad=2,...,Roy=162
@@ -985,6 +1030,7 @@ const TPB_ALL = [
 
 // ─── CATEGORIES ───────────────────────────────────────────────────────────────
 const CATS = [
+  {id:'gs',name:'Glass Bird Suncatcher',tab:'Glass Bird', short:'GS',cols:4, products:GS},
   {id:'bs',name:'British Birds: Garden Signs',tab:'British Birds',    short:'BS',cols:4, products:BS},
   {id:'hp',name:'Heart of the Home',   short:'HP',cols:3, products:HP},
   {id:'rb',name:'Bendy Bot',       short:'RB',cols:3, products:RB},
@@ -1151,6 +1197,7 @@ function swCat(id){ curCatTab=id; renderCatalogueTabs(); renderCataloguePage(); 
 function renderCatalogueTabs(){
   const pseudo = [
     {id:'new',       label:'✨ New'},
+    {id:'full',      label:'📖 Full Range'},
     {id:'clearance', label:'🏷️ Clearance'},
   ];
   document.getElementById('tabs').innerHTML = pseudo.map(t=>
@@ -1160,12 +1207,15 @@ function renderCatalogueTabs(){
 
 function cgCardH(item, ribbon){
   const hasVariants = item.variants && item.variants.length;
-  const variantsHtml = hasVariants ? `
-    <div class="cg-variants-lbl">Available designs / <em>Desenhos disponíveis</em></div>
-    <div class="cg-variants-list">${item.variants.map(v=>`<div class="cg-vitem">${v}</div>`).join('')}</div>` : '';
+  const infoHtml = hasVariants ? `<div class="cg-info">
+      <div class="cg-variants-lbl">Available designs / <em>Desenhos disponíveis</em></div>
+      <div class="cg-variants-list">${item.variants.map(v=>`<div class="cg-vitem">${v}</div>`).join('')}</div>
+    </div>` : '';
+  const price = item.price || 'Price on request';
   return `<div class="cg-card">
     <div class="cg-name-en">${item.nameEn}</div>
     <div class="cg-name-pt">${item.namePt}</div>
+    <div class="cg-price-row"><span class="cg-price">💬 ${price}</span></div>
     <div class="cg-row">
       <div class="cg-shot-wrap">
         ${ribbon?`<div class="cg-ribbon${ribbon==='Clearance'?' clearance':''}">${ribbon}</div>`:''}
@@ -1177,9 +1227,29 @@ function cgCardH(item, ribbon){
         <div class="cg-shot-cap">Full range / <em>Toda a gama</em></div>
       </div>`:''}
     </div>
-    <div class="cg-info">
-      ${variantsHtml}
+    ${infoHtml}
+  </div>`;
+}
+
+function cgContactH(){
+  return `<div class="cg-contact">
+    <div class="cg-c-title">Tantaprenda Unipessoal Lda</div>
+    <div class="cg-c-sub">Questions or an order? Get in touch / <em>Dúvidas ou encomendas? Contacte-nos</em></div>
+    <div class="cg-c-lines">
+      📞 Tel: <a href="tel:+351289516447">289 516 447</a><br>
+      💬 WhatsApp: <a href="https://wa.me/351917516301" target="_blank" rel="noopener">917 516 301</a><br>
+      ✉️ Email: <a href="mailto:paulmarsh56@sapo.pt">paulmarsh56@sapo.pt</a>
     </div>
+  </div>`;
+}
+
+function frCardH(item){
+  return `<div class="fr-card">
+    <div class="fr-head">
+      <div class="fr-name-en">${item.nameEn}</div>
+      <div class="fr-name-pt">${item.namePt}</div>
+    </div>
+    <div class="fr-shot"><img src="${item.img}?v=${CATALOGUE_IMG_V}" alt="${item.nameEn}" loading="lazy"></div>
   </div>`;
 }
 
@@ -1188,10 +1258,21 @@ function renderCataloguePage(){
 
   if(curCatTab==='new'){
     html += `<div class="cg-section-head"><span class="cg-mark">✨</span><span class="cg-section-title">New Products</span></div>
-      <div class="cg-section-sub">Novidades</div>`;
+      <div class="cg-section-sub">Novidades &mdash; all 5 designs share one display stand / <em>os 5 modelos partilham um expositor</em></div>`;
     html += NEW_PRODUCTS.length
       ? `<div class="cg-grid">${NEW_PRODUCTS.map(p=>cgCardH(p,'New')).join('')}</div>`
       : `<div class="cg-stub">New arrivals coming soon / Novidades em breve</div>`;
+    html += cgContactH();
+    document.getElementById('pages').innerHTML = html;
+    return;
+  }
+
+  if(curCatTab==='full'){
+    html += `<div class="cg-section-head"><span class="cg-mark">📖</span><span class="cg-section-title">Full Range</span></div>
+      <div class="cg-section-sub">Catálogo completo, uma página por produto &mdash; preço por unidade incluído na foto</div>`;
+    html += FULL_RANGE.length
+      ? `<div class="fr-grid">${FULL_RANGE.map(p=>frCardH(p)).join('')}</div>`
+      : `<div class="cg-stub">Full range coming soon / Catálogo completo em breve</div>`;
     document.getElementById('pages').innerHTML = html;
     return;
   }
@@ -1199,9 +1280,16 @@ function renderCataloguePage(){
   // Stock Clearance (also the default/fallback tab)
   html += `<div class="cg-section-head"><span class="cg-mark">🏷️</span><span class="cg-section-title">Stock Clearance</span></div>
     <div class="cg-section-sub">Liquidação de Stock</div>`;
+  html += `<div class="cg-promo">
+    <div class="cg-promo-ic">🏷️</div>
+    <div class="cg-promo-txt"><b>Clearance — amazing prices while stocks last!</b>
+      Contact us for details / <em>Contacte-nos para mais informações</em> &middot;
+      <a href="https://wa.me/351917516301" target="_blank" rel="noopener">WhatsApp 917 516 301</a></div>
+  </div>`;
   html += STOCK_CLEARANCE.length
     ? `<div class="cg-grid">${STOCK_CLEARANCE.map(p=>cgCardH(p,'Clearance')).join('')}</div>`
     : `<div class="cg-stub">Clearance pieces coming soon / Peças em liquidação em breve</div>`;
+  html += cgContactH();
   document.getElementById('pages').innerHTML = html;
 }
 
@@ -1775,6 +1863,7 @@ function updatePageTotals(){
 }
 
 const CAT_IMAGES = {
+  'gs': 'images/catalogue/glass-bird-suncatcher-thumb.jpg',
   'rb': 'https://i.postimg.cc/gX3k5FBW/Bendy-Bot.jpg',
   'cn': 'https://i.postimg.cc/r05FbXY8/chosen-locket.jpg',
   'bs': 'https://i.postimg.cc/MM1K42r6/garden-signs.jpg',
@@ -1794,6 +1883,39 @@ const CAT_IMAGES = {
 };
 
 // ─── CATALOGUE (read-only client browsing) ────────────────────────────────────
+// Full Range tab — one whole brochure page per product (supplier branding removed,
+// price-per-item badge baked into the photo). Covers the full Mulberry Studios range.
+const FULL_RANGE = [
+  {nameEn:'British Birds Garden Signs',        namePt:'Placas de Jardim Pássaros Britânicos',
+    img:'images/catalogue/british-birds-garden-signs.jpg'},
+  {nameEn:"Wooden Hearts (Claire's / Laura's)", namePt:'Corações de Madeira',
+    img:'images/catalogue/wooden-hearts.jpg'},
+  {nameEn:'Bendy Bot',                          namePt:'Robô Flexível (Bendy Bot)',
+    img:'images/catalogue/bendy-bot.jpg'},
+  {nameEn:'Chosen Phone Bracelet',              namePt:'Pulseira de Telemóvel Chosen',
+    img:'images/catalogue/chosen-phone-bracelet.jpg'},
+  {nameEn:'Identité Necklace',                  namePt:'Colar Identité',
+    img:'images/catalogue/identite-necklace.jpg'},
+  {nameEn:'Identité Bracelet',                  namePt:'Pulseira Identité',
+    img:'images/catalogue/identity-bracelet.jpg'},
+  {nameEn:'Identité Ring',                      namePt:'Anel Identité',
+    img:'images/catalogue/identite-ring.jpg'},
+  {nameEn:'Me & My Pet Keyrings',               namePt:'Porta-Chaves Eu & o Meu Animal',
+    img:'images/catalogue/me-my-pet-keyrings.jpg'},
+  {nameEn:'Pet Coasters',                       namePt:'Bases de Copos com Animais',
+    img:'images/catalogue/pet-coasters.jpg'},
+  {nameEn:'Venturous Keyring & Bottle Opener',  namePt:'Porta-Chaves e Abre-Garrafas Venturous',
+    img:'images/catalogue/venturous-keyring-bottle-opener.jpg'},
+  {nameEn:'Gemstone Jewellery',                 namePt:'Joias de Pedras Semipreciosas',
+    img:'images/catalogue/gemstone-jewellery.jpg'},
+  {nameEn:'Signtastic Wall Art Signs',          namePt:'Placas de Parede Signtastic',
+    img:'images/catalogue/signtastic-wall-art-signs.jpg'},
+  {nameEn:'Handmade Wooden Keyrings',           namePt:'Porta-Chaves de Madeira Artesanais',
+    img:'images/catalogue/handmade-wooden-keyrings.jpg'},
+  {nameEn:'Glass Bird Suncatcher',              namePt:'Apanhador de Sol Pássaro de Vidro',
+    img:'images/catalogue/glass-bird-suncatcher.jpg'},
+];
+
 // ratio = width/height of the actual product photo, so thin items (bookmarks) and
 // tall items (hanging plaques) render at their true proportions, not forced square.
 // img = single clean hero shot; groupImg = photo of the actual display rack, proving
@@ -2438,6 +2560,7 @@ function updateStockTotal(catId){
 
 // ─── RESTOCK MODE ─────────────────────────────────────────────────────────────
 const LOW_STOCK_THRESHOLDS = {
+  'gs': 20,  // Glass Bird Suncatcher (default estimate — adjust if you have a real threshold)
   'bs': 30,  // British Birds: Garden Signs
   'hp': 20,  // Heart of the Home
   'rb': 20,  // Bendy Bot
