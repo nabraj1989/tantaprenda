@@ -1733,9 +1733,14 @@ function setMode(mode){
   appMode = mode;
   document.getElementById('btn-order').className = 'mode-btn order-mode' + (mode==='order' ? '' : ' inactive');
   const catalogueBtn = document.getElementById('btn-catalogue');
-  if(catalogueBtn) catalogueBtn.style.cssText = mode==='catalogue'
-    ? 'background:var(--gold);color:var(--dark);border:1px solid var(--gold);border-radius:20px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;'
-    : 'background:rgba(255,255,255,0.12);color:var(--gold);border:1px solid rgba(201,168,76,0.5);border-radius:20px;padding:5px 12px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;';
+  if(catalogueBtn){
+    catalogueBtn.style.cssText = mode==='catalogue'
+      ? 'background:var(--gold);color:var(--dark);border:1px solid var(--gold);border-radius:20px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;'
+      : 'background:rgba(255,255,255,0.12);color:var(--gold);border:1px solid rgba(201,168,76,0.5);border-radius:20px;padding:5px 12px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;';
+    catalogueBtn.innerHTML = mode==='catalogue'
+      ? '← Back / <em>Voltar</em>'
+      : '📖 Catalogue / <em>Catálogo</em>';
+  }
   if(mode==='stock' && !inventoryLoaded) loadInventory().then(()=>renderPage());
   if(mode==='restock' && !inventoryLoaded) loadInventory().then(()=>renderPage());
   if(mode==='restock' && !pendingRestockLoaded) loadPendingRestock().then(()=>renderPage());
@@ -1772,7 +1777,7 @@ function setMode(mode){
   const sendRestockBtn2 = document.getElementById('send-restock-btn');
   if(sendRestockBtn2 && mode!=='restock') sendRestockBtn2.style.display='none';
   if(mode==='restock' && pgBar2) pgBar2.style.display='none';
-  if(mode==='catalogue') renderTabs();
+  renderTabs();
   renderPage();
   updatePageTotals();
 }
