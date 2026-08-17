@@ -246,6 +246,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);
 .fr-shot{width:100%;background:var(--warm);}
 .fr-shot img{display:block;width:100%;height:auto;}
 
+/* draft-restored toast */
+.draft-toast{position:fixed;left:50%;bottom:78px;transform:translateX(-50%) translateY(20px);background:var(--dark);color:var(--gold);border:1px solid rgba(201,168,76,0.5);border-radius:20px;padding:8px 16px;font-size:12px;font-weight:600;white-space:nowrap;box-shadow:0 6px 20px -8px rgba(0,0,0,.4);z-index:9999;opacity:0;pointer-events:none;transition:opacity .25s ease,transform .25s ease;}
+.draft-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
 </style>
 </head>
 <body>
@@ -261,10 +265,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);
     <button class="new-btn" id="new-btn" onclick="confirmNew()">✕ New / <em>Novo</em></button>
   </div>
 </div>
+<div class="draft-toast" id="draft-toast">💾 Draft restored / <em>Rascunho restaurado</em></div>
 <div class="client-bar" id="client-bar">
-  <div class="cf"><label>Name * / <em>Nome</em></label><input id="cname" placeholder="Maria Silva" type="text"></div>
-  <div class="cf"><label>Address / <em>Morada</em></label><input id="ccomp" placeholder="Address" type="text"></div>
-  <div class="cf" style="max-width:140px"><label>Phone / <em>Telefone</em></label><input id="cphone" placeholder="+351…" type="tel"></div>
+  <div class="cf"><label>Name * / <em>Nome</em></label><input id="cname" placeholder="Maria Silva" type="text" oninput="scheduleDraftSave()"></div>
+  <div class="cf"><label>Address / <em>Morada</em></label><input id="ccomp" placeholder="Address" type="text" oninput="scheduleDraftSave()"></div>
+  <div class="cf" style="max-width:140px"><label>Phone / <em>Telefone</em></label><input id="cphone" placeholder="+351…" type="tel" oninput="scheduleDraftSave()"></div>
 </div>
 <div class="tabs-wrap"><div class="tabs" id="tabs"></div></div>
 <div id="mode-bar-wrap"><div class="mode-bar">
@@ -1188,6 +1193,7 @@ function renderTabs(){
 }
 function sw(id){
   curTab=id;renderTabs();renderPage();updatePageTotals();
+  scheduleDraftSave();
   if(id==='rb' && appMode==='order'){ bendyNoticeAcked = false; showBendyNotice(); }
 }
 
@@ -1359,7 +1365,7 @@ function renderPage(){
       <div style="flex:1;">
         <div style="font-size:8px;color:var(--red);font-weight:600;text-transform:uppercase;letter-spacing:.3px;margin-bottom:3px;">\u21a9 Number of pieces to be returned / <em>N\u00famero de Pe\u00e7as a Devolver</em></div>
         <input id="prep-returns" type="tel" inputmode="numeric" pattern="[0-9]*" placeholder="0" value="${catReturns[curTab]||''}"
-          oninput="catReturns[curTab]=parseInt(this.value)||0;updatePageTotals()"
+          oninput="updateCatReturn(curTab,this.value)"
           style="width:100%;border:1px solid var(--red);border-radius:6px;padding:4px;font-size:16px;font-weight:700;text-align:center;font-family:'DM Sans',sans-serif;color:var(--red);background:#fff9f9;">
       </div>
     </div>`;
@@ -1399,7 +1405,7 @@ function renderPage(){
       <div style="flex:1;">
         <div style="font-size:8px;color:var(--red);font-weight:600;text-transform:uppercase;letter-spacing:.3px;margin-bottom:3px;">\u21a9 Number of pieces to be returned / <em>N\u00famero de Pe\u00e7as a Devolver</em></div>
         <input id="order-returns" type="tel" inputmode="numeric" pattern="[0-9]*" placeholder="0" value="${catReturns[curTab]||''}"
-          oninput="catReturns[curTab]=parseInt(this.value)||0;updatePageTotals()"
+          oninput="updateCatReturn(curTab,this.value)"
           style="width:100%;border:1px solid var(--red);border-radius:6px;padding:4px;font-size:16px;font-weight:700;text-align:center;font-family:'DM Sans',sans-serif;color:var(--red);background:#fff9f9;">
       </div>
     </div>`;
@@ -1417,7 +1423,13 @@ function renderPage(){
   document.getElementById('pages').innerHTML=html;
   updatePageTotals();
 }
-function saveSI(id,v){catSI[id]=v;}
+function saveSI(id,v){catSI[id]=v;scheduleDraftSave();}
+function updateCatReturn(id,v){
+  catReturns[id]=parseInt(v)||0;
+  updatePageTotals();
+  scheduleDraftSave();
+  schedulePrepareAutosave();
+}
 function doSearch(q){
   const lo=q.toLowerCase();
   document.querySelectorAll('.card').forEach(el=>{
@@ -1493,8 +1505,79 @@ function toos(id){
   refreshCard(id);updateTotals();updatePanel();
 }
 
+// ─── DRAFT AUTOSAVE (ORDER MODE) ───────────────────────────────────────────────
+// Staff building a client's order only reach Supabase once "Send Order" is
+// clicked — until then `order` lives in memory only, so getting interrupted and
+// closing the app loses everything typed so far. Mirror the in-progress order to
+// localStorage on every change and restore it on load so reopening the app (even
+// on a fresh reload) picks up exactly where they left off.
+const ORDER_DRAFT_KEY = 'orderDraft2';
+let _draftSaveTimer = null;
+function scheduleDraftSave(){
+  if(appMode!=='order') return;
+  clearTimeout(_draftSaveTimer);
+  _draftSaveTimer = setTimeout(saveDraftNow, 400);
+}
+function saveDraftNow(){
+  const cname=document.getElementById('cname'), ccomp=document.getElementById('ccomp'), cphone=document.getElementById('cphone');
+  const hasItems = Object.values(order).some(q=>q>0);
+  const hasClientInfo = !!(cname&&cname.value.trim()) || !!(ccomp&&ccomp.value.trim()) || !!(cphone&&cphone.value.trim());
+  if(!hasItems && !hasClientInfo){ localStorage.removeItem(ORDER_DRAFT_KEY); return; }
+  const draft = {
+    order, catSI, catReturns, curTab,
+    cname: cname?cname.value:'', ccomp: ccomp?ccomp.value:'', cphone: cphone?cphone.value:'',
+    savedAt: Date.now()
+  };
+  try{ localStorage.setItem(ORDER_DRAFT_KEY, JSON.stringify(draft)); }catch(e){}
+}
+function clearDraft(){ localStorage.removeItem(ORDER_DRAFT_KEY); }
+function restoreDraft(){
+  let draft;
+  try{ draft = JSON.parse(localStorage.getItem(ORDER_DRAFT_KEY)||'null'); }catch(e){ draft=null; }
+  if(!draft) return;
+  order = draft.order || {};
+  catSI = draft.catSI || {};
+  catReturns = draft.catReturns || {};
+  if(draft.curTab && CATS.some(c=>c.id===draft.curTab)) curTab = draft.curTab;
+  const cname=document.getElementById('cname'), ccomp=document.getElementById('ccomp'), cphone=document.getElementById('cphone');
+  if(cname) cname.value = draft.cname||'';
+  if(ccomp) ccomp.value = draft.ccomp||'';
+  if(cphone) cphone.value = draft.cphone||'';
+  const hasItems = Object.values(order).some(q=>q>0);
+  if(hasItems){
+    const toast = document.getElementById('draft-toast');
+    if(toast){
+      toast.classList.add('show');
+      setTimeout(()=>toast.classList.remove('show'), 3500);
+    }
+  }
+}
+
+// ─── DRAFT AUTOSAVE (PREPARE MODE) ─────────────────────────────────────────────
+// Same problem in reverse: preparing an order edits `prepare`/`catReturns` only
+// in memory until "Send Bill" is clicked. Debounce a background save of that
+// progress to the order's Supabase row (without changing its status) so
+// re-opening it via "Load →" resumes from where prep was left off, even after
+// the app was fully closed in between.
+let _prepSaveTimer = null;
+function schedulePrepareAutosave(){
+  if(appMode!=='prepare' || !currentOrderId) return;
+  clearTimeout(_prepSaveTimer);
+  _prepSaveTimer = setTimeout(savePrepareDraftNow, 800);
+}
+async function savePrepareDraftNow(){
+  if(!currentOrderId) return;
+  try{
+    await sbFetch('orders?id=eq.'+currentOrderId, {
+      method:'PATCH',
+      body: JSON.stringify({prepare_data: prepare, returns: catReturns})
+    });
+  }catch(e){ console.error('Prepare autosave failed:', e); }
+}
+
 // ─── TOTALS ───────────────────────────────────────────────────────────────────
 function updateTotals(){
+  scheduleDraftSave();
   const items=Object.keys(order).length,units=Object.values(order).reduce((a,b)=>a+b,0);
   const tiEl=document.getElementById('ti'); if(tiEl) tiEl.textContent=items;
   const tuEl=document.getElementById('tu'); if(tuEl) tuEl.textContent=units;
@@ -1587,6 +1670,8 @@ function doNew(){
   order={};catSI={};prepare={};
   ['cname','ccomp','cphone'].forEach(id=>document.getElementById(id).value='');
   catReturns={};currentOrderId=null;
+  clearTimeout(_draftSaveTimer);
+  clearDraft();
   closeCW();
   document.getElementById('panel').classList.remove('open');
   document.getElementById('overlay').classList.remove('open');
@@ -1820,6 +1905,7 @@ function setPrep(id, field, val){
     if(bl) bl.textContent = '🧾 Final: ' + final;
   }
   updatePageTotals();
+  schedulePrepareAutosave();
 }
 
 function renderPrepareGrid(products, cols){
@@ -2970,6 +3056,9 @@ function loadFromURL(){
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
+// An incoming ?approval= link already carries its own order state, so don't
+// restore a stale local draft on top of it.
+if(!window.location.search.includes('approval')) restoreDraft();
 renderTabs();renderPage();updateTotals();
 loadFromURL();
 // Auto-open orders panel if ?orders param in URL
