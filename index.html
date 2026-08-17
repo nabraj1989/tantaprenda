@@ -393,6 +393,19 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);
     </div>
   </div>
 </div>
+<!-- FINISH ORDER CONFIRMATION (asked every time, so items ordered separately get combined) -->
+<div class="cw" id="finish-order-overlay">
+  <div class="cb" style="max-width:320px;">
+    <h3>Já terminou a sua encomenda?<br><em>Have you finished your order?</em></h3>
+    <p>Se tem mais artigos para encomendar, pode adicioná-los agora e enviar tudo junto numa só mensagem.<br>
+    <em>If you have more items to order, you can add them now and send everything together in one message.</em></p>
+    <p style="margin-top:8px;font-weight:600;">Tem a certeza que quer enviar agora?<br><em>Are you sure you want to send now?</em></p>
+    <div class="cr" style="margin-top:14px;">
+      <button class="cc2" onclick="closeFinishOrderConfirm()">Adicionar mais / <em>Add more</em></button>
+      <button class="co" onclick="confirmFinishOrder()">Enviar / <em>Send</em></button>
+    </div>
+  </div>
+</div>
 <script>
 // ─── DATA (exact order + exact codes from forms) ───────────────────────────
 
@@ -1318,6 +1331,25 @@ function ackBendyNotice(){
   if(next) next();
 }
 
+// ─── FINISH ORDER CONFIRMATION ─────────────────────────────────────────────────
+// Clients often send Garden Signs, then separately send Bendy Bot, etc. — each as
+// its own WhatsApp message/order. Asked every time (not just once) so there's
+// always a last chance to combine everything into one order before it's sent.
+let finishOrderPendingAction = null;
+function showFinishOrderConfirm(afterConfirm){
+  finishOrderPendingAction = afterConfirm;
+  document.getElementById('finish-order-overlay').classList.add('open');
+}
+function closeFinishOrderConfirm(){
+  document.getElementById('finish-order-overlay').classList.remove('open');
+  finishOrderPendingAction = null;
+}
+function confirmFinishOrder(){
+  document.getElementById('finish-order-overlay').classList.remove('open');
+  const next = finishOrderPendingAction; finishOrderPendingAction = null;
+  if(next) next();
+}
+
 // ─── PHONE BRACELET / TANTAPRENDA STAND ────────────────────────────────────────
 function renderPhone(cat){
   const p=cat.baseProducts;
@@ -1619,6 +1651,13 @@ function updatePanel(){
 // ─── WHATSAPP ─────────────────────────────────────────────────────────────────
 function sendWA(){
   if(orderHasBendyItems() && !bendyNoticeAcked){ showBendyNotice(sendWA); return; }
+  const name=document.getElementById('cname').value.trim();
+  const entries=Object.entries(order).filter(([,q])=>q>0);
+  if(!entries.length){alert('Please add items first.');return;}
+  if(!name){alert('Please enter the client name.');return;}
+  showFinishOrderConfirm(doSendWA);
+}
+function doSendWA(){
   const name=document.getElementById('cname').value.trim();
   const comp=document.getElementById('ccomp').value.trim();
   const phone=document.getElementById('cphone').value.trim();
@@ -2149,10 +2188,11 @@ async function sendBillSummary(){
     if(final>0){
       hasItems=true;
       const code=CAT_CODES[cat.name]||'—';
+      const shortCode=cat.short?' / '+cat.short:'';
       if(ret>0){
-        msg += '📦 *'+cat.name+' ('+code+')*: *'+final+'* _(ordered '+(final+ret)+', returned '+ret+')_\n';
+        msg += '📦 *'+cat.name+' ('+code+shortCode+')*: *'+final+'* _(ordered '+(final+ret)+', returned '+ret+')_\n';
       } else {
-        msg += '📦 *'+cat.name+' ('+code+')*: *'+final+'*\n';
+        msg += '📦 *'+cat.name+' ('+code+shortCode+')*: *'+final+'*\n';
       }
     }
   });
