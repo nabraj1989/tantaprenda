@@ -250,6 +250,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);
 .draft-toast{position:fixed;left:50%;bottom:78px;transform:translateX(-50%) translateY(20px);background:var(--dark);color:var(--gold);border:1px solid rgba(201,168,76,0.5);border-radius:20px;padding:8px 16px;font-size:12px;font-weight:600;white-space:nowrap;box-shadow:0 6px 20px -8px rgba(0,0,0,.4);z-index:9999;opacity:0;pointer-events:none;transition:opacity .25s ease,transform .25s ease;}
 .draft-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
+/* prepare-mode stock update toast (green success) */
+.prep-stock-toast{position:fixed;left:50%;bottom:78px;transform:translateX(-50%) translateY(20px);background:#1a7a4a;color:#fff;border:1px solid rgba(26,122,74,0.6);border-radius:20px;padding:8px 16px;font-size:12px;font-weight:600;white-space:nowrap;box-shadow:0 6px 20px -8px rgba(0,0,0,.4);z-index:9999;opacity:0;pointer-events:none;transition:opacity .25s ease,transform .25s ease;max-width:88vw;text-overflow:ellipsis;overflow:hidden;}
+.prep-stock-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.prep-reconcile-input{border:1.5px solid var(--gold);border-radius:6px;padding:8px;width:100%;font-size:16px;text-align:center;font-weight:700;font-family:'DM Sans',sans-serif;color:var(--dark);background:#fffdf5;margin:10px 0;}
+.prep-reconcile-input:focus{outline:none;border-color:#d4a017;}
+
 </style>
 </head>
 <body>
@@ -354,6 +360,29 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);
     <span class="pin-cancel" onclick="closeQtyPopup()">Cancel</span>
   </div>
 </div>
+<!-- PREPARE MODE: confirm Available-quantity change (updates stock) -->
+<div class="cw" id="prep-confirm-overlay">
+  <div class="cb">
+    <h3 id="prep-confirm-msg">Confirm?</h3>
+    <p>This will update the stock.</p>
+    <div class="cr" style="margin-top:14px;">
+      <button class="cc2" onclick="cancelPrepConfirm()">Cancel</button>
+      <button class="co" onclick="confirmPrepConfirmGo()">Confirm</button>
+    </div>
+  </div>
+</div>
+<!-- PREPARE MODE: reconcile a 0-in-stock item that turns out to have some available -->
+<div class="cw" id="prep-reconcile-overlay">
+  <div class="cb">
+    <h3 id="prep-reconcile-title">How many are actually available?</h3>
+    <input type="tel" inputmode="numeric" pattern="[0-9]*" id="prep-reconcile-input" class="prep-reconcile-input" placeholder="0">
+    <div class="cr">
+      <button class="cc2" onclick="cancelPrepReconcile()">Cancel</button>
+      <button class="co" onclick="confirmPrepReconcile()">Update Stock</button>
+    </div>
+  </div>
+</div>
+<div class="prep-stock-toast" id="prep-stock-toast"></div>
 <!-- ORDERS PANEL -->
 <div class="orders-panel" id="orders-panel">
   <div class="orders-header">
@@ -1509,11 +1538,106 @@ function pickQtyPopup(val){
   if(mode==='order'){
     if(val<=0) delete order[id]; else order[id]=val;
     refreshCard(id);updateTotals();updatePanel();renderTabs();updatePageTotals();
+    closeQtyPopup();
   } else {
-    setPrep(id,'avail',val);
-    refreshPrepCard(id);
+    closeQtyPopup();
+    handlePrepAvailChange(id, val);
   }
-  closeQtyPopup();
+}
+
+// ─── PREPARE MODE: Available-quantity → stock sync ─────────────────────────
+function getPrepProduct(id){
+  let p = LK[id];
+  if(!p && id.startsWith('gb-')) p = {id, name:'Gift Box', code:'', isGB:true, catName:'Gift Box', catShort:'GB'};
+  return p;
+}
+
+let prepConfirmState = null;   // {id, val}
+let prepReconcileState = null; // {id}
+
+function handlePrepAvailChange(id, val){
+  const p = getPrepProduct(id);
+  if(!p) return;
+  if(currentEmployee !== null){
+    // Employees can only view stock (same as Stock mode's read-only input) —
+    // just set the order's working Available number, no stock popups/sync.
+    setPrep(id, 'avail', val);
+    refreshPrepCard(id);
+    return;
+  }
+  const ordered = order[id] || 0;
+  const pr = prepare[id] || {avail: ordered, ret: 0};
+  const oldAvail = pr.avail !== undefined ? pr.avail : ordered;
+  const wasOutOfStock = inventory[id] !== undefined && inventory[id] <= 0;
+
+  if(wasOutOfStock && val > 0){
+    prepReconcileState = {id};
+    const title = document.getElementById('prep-reconcile-title');
+    if(title) title.textContent = 'How many are actually available for '+p.name+'?';
+    const inp = document.getElementById('prep-reconcile-input');
+    if(inp) inp.value = '';
+    document.getElementById('prep-reconcile-overlay').classList.add('open');
+    if(inp) setTimeout(()=>inp.focus(), 50);
+    return;
+  }
+
+  if(val === oldAvail) return; // no change, nothing to confirm
+
+  prepConfirmState = {id, val};
+  const msg = document.getElementById('prep-confirm-msg');
+  if(msg) msg.innerHTML = 'Confirm: only <strong>'+val+'</strong> available for '+p.name+'?';
+  document.getElementById('prep-confirm-overlay').classList.add('open');
+}
+
+function cancelPrepConfirm(){
+  prepConfirmState = null;
+  document.getElementById('prep-confirm-overlay').classList.remove('open');
+}
+
+async function confirmPrepConfirmGo(){
+  if(!prepConfirmState) return;
+  const {id, val} = prepConfirmState;
+  prepConfirmState = null;
+  document.getElementById('prep-confirm-overlay').classList.remove('open');
+  await applyPrepAvailAndStock(id, val);
+}
+
+function cancelPrepReconcile(){
+  prepReconcileState = null;
+  document.getElementById('prep-reconcile-overlay').classList.remove('open');
+}
+
+async function confirmPrepReconcile(){
+  if(!prepReconcileState) return;
+  const {id} = prepReconcileState;
+  const inp = document.getElementById('prep-reconcile-input');
+  const val = Math.max(0, parseInt(inp && inp.value)||0);
+  prepReconcileState = null;
+  document.getElementById('prep-reconcile-overlay').classList.remove('open');
+  const ok = await applyPrepAvailAndStock(id, val);
+  const p = getPrepProduct(id);
+  if(ok) showPrepStockToast('✅ Stock updated for '+(p?p.name:id));
+  else showPrepStockToast('Available updated. Stock sync requires admin login.');
+}
+
+async function applyPrepAvailAndStock(id, val){
+  const p = getPrepProduct(id);
+  if(!p) return false;
+  setPrep(id, 'avail', val);
+  refreshPrepCard(id);
+  const ok = await setStock(id, p.name, p.code||'', p.catShort||'', val);
+  const btn = document.getElementById('avail-inp-'+id);
+  if(btn){ btn.style.borderColor = ok ? '#2e7d32' : 'var(--red)'; setTimeout(()=>{ btn.style.borderColor=''; },600); }
+  return ok;
+}
+
+function showPrepStockToast(msg){
+  const t = document.getElementById('prep-stock-toast');
+  if(!t) return;
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(showPrepStockToast._t);
+  showPrepStockToast._t = setTimeout(()=>t.classList.remove('show'), 3000);
 }
 
 function refreshCard(id){
@@ -1816,7 +1940,7 @@ function confirmStock(productId, productName, productCode, category){
   updateStockTotal(cat_id_global);
 }
 async function setStock(productId, productName, productCode, category, value){
-  if(currentEmployee !== null) return; // only admin can update stock
+  if(currentEmployee !== null) return false; // only admin can update stock
   const newStock = Math.max(0, parseInt(value)||0);
   inventory[productId] = newStock;
   try {
@@ -1832,11 +1956,13 @@ async function setStock(productId, productName, productCode, category, value){
     }
     const inp = document.getElementById('stock-inp-'+productId);
     if(inp){ inp.style.borderColor='#2e7d32'; setTimeout(()=>{ inp.style.borderColor=''; },600); }
+    return true;
   } catch(e){
     console.error('Failed to save stock:', productId, e);
     alert('Stock save failed: '+e.message);
     const inp = document.getElementById('stock-inp-'+productId);
     if(inp) inp.style.borderColor='var(--red)';
+    return false;
   }
 }
 
@@ -1922,7 +2048,7 @@ function prepCardH(p){
       </div>
       <div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:0;">
         <span class="prep-lbl">Available</span>
-        <button class="prep-input avail-inp" onclick="openQtyPopup('${p.id}','prepare')" style="width:100%;cursor:pointer;">${avail}</button>
+        <button class="prep-input avail-inp" id="avail-inp-${p.id}" onclick="openQtyPopup('${p.id}','prepare')" style="width:100%;cursor:pointer;">${avail}</button>
       </div>
     </div>
   </div>`;
