@@ -2849,6 +2849,62 @@ async function downloadRestockPDF(){
     alert('Please enter quantities to reorder first.');
     return;
   }
+
+  // Save to Supabase FIRST, before the PDF ever appears — once someone sees the PDF
+  // download they consider the job done and may close the tab immediately. Saved in
+  // parallel chunks (not one at a time) so hundreds of items don't turn into a long
+  // silent operation that's easy to walk away from mid-save, with a "don't close this
+  // tab" guard and visible progress for the duration.
+  const btn = document.getElementById('send-restock-btn');
+  const originalBtnHTML = btn ? btn.innerHTML : '';
+  const beforeUnloadGuard = (e)=>{ e.preventDefault(); e.returnValue=''; };
+  window.addEventListener('beforeunload', beforeUnloadGuard);
+  if(btn){ btn.disabled = true; btn.style.opacity='0.7'; btn.style.cursor='not-allowed'; }
+
+  const CHUNK_SIZE = 10;
+  let savedCount = 0;
+  const failed = [];
+  try {
+    for(let i=0; i<items.length; i+=CHUNK_SIZE){
+      const chunk = items.slice(i, i+CHUNK_SIZE);
+      if(btn) btn.innerHTML = '⏳ Saving '+Math.min(i+CHUNK_SIZE, items.length)+' / '+items.length+'… keep this open';
+      await Promise.all(chunk.map(async ([id,qty])=>{
+        const p = LK[id];
+        const newQty = (pendingRestock[id]||0) + qty;
+        try {
+          const updateResult = await sbFetch('pending_restock?product_id=eq.'+encodeURIComponent(id), {
+            method:'PATCH',
+            body: JSON.stringify({qty:newQty, product_name:p?p.name:'', product_code:p&&p.code?p.code:''})
+          });
+          if(!updateResult || updateResult.length===0){
+            await sbFetch('pending_restock', {
+              method:'POST',
+              body: JSON.stringify({product_id:id, qty:newQty, product_name:p?p.name:'', product_code:p&&p.code?p.code:''})
+            });
+          }
+          pendingRestock[id] = newQty;
+          savedCount++;
+        } catch(e){
+          failed.push({id, error: e.message});
+        }
+      }));
+    }
+  } finally {
+    window.removeEventListener('beforeunload', beforeUnloadGuard);
+    if(btn){ btn.disabled = false; btn.style.opacity=''; btn.style.cursor=''; btn.innerHTML = originalBtnHTML; }
+  }
+
+  if(failed.length){
+    // Drop the ones that already saved so a retry only resubmits what actually failed
+    // (they're additive — resubmitting a success would double-count its quantity).
+    items.forEach(([id])=>{ if(!failed.some(f=>f.id===id)) delete restockQty[id]; });
+    renderPage();
+    alert('Saved '+savedCount+' of '+items.length+' item(s) to the pending restock list. These failed and were NOT included — no PDF was generated:\n'
+      + failed.map(f=>(LK[f.id]&&LK[f.id].name||f.id)+' — '+f.error).join('\n')
+      + '\n\nCheck your connection and tap Download PDF again to retry just the failed items.');
+    return;
+  }
+
   // Group by category
   const byCat = {};
   items.forEach(([id,qty])=>{
@@ -2930,29 +2986,9 @@ async function downloadRestockPDF(){
   const fname = 'restock-order-'+date.replace(/\//g,'-')+'.pdf';
   doc.save(fname);
 
-  // Save pending restock for later "Receive Stock" step (synced via Supabase)
-  try {
-    for(const [id,qty] of items){
-      const p = LK[id];
-      const newQty = (pendingRestock[id]||0) + qty;
-      const updateResult = await sbFetch('pending_restock?product_id=eq.'+encodeURIComponent(id), {
-        method:'PATCH',
-        body: JSON.stringify({qty:newQty, product_name:p?p.name:'', product_code:p&&p.code?p.code:''})
-      });
-      if(!updateResult || updateResult.length===0){
-        await sbFetch('pending_restock', {
-          method:'POST',
-          body: JSON.stringify({product_id:id, qty:newQty, product_name:p?p.name:'', product_code:p&&p.code?p.code:''})
-        });
-      }
-      pendingRestock[id] = newQty;
-    }
-  } catch(e){
-    alert('PDF downloaded, but failed to save the pending restock list: '+e.message+'\n\nReceive Stock may not show these items on other devices.');
-  }
   restockQty = {};
   renderPage();
-  alert('PDF order form downloaded!\n\nItems added to your "Receive Stock" list for when delivery arrives.');
+  alert('Items saved to your "Receive Stock" list, and PDF order form downloaded!');
 }// ─── RECEIVE STOCK PANEL ────────────────────────────────────────────────────
 function openReceiveStock(){
   const pending = pendingRestock;
