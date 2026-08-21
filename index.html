@@ -103,11 +103,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);
 .card.stand{border:2px solid var(--gold);background:#fffdf5;}
 .card.stand .pname{font-weight:700;}
 /* Name coloring — identical across Order/Prepare/Stock/Restock modes.
-   Cascade order sets priority: generic (blue) < low-stock (yellow) < out-of-stock (red),
-   so an item that's both generic and out of stock shows red, never blue. */
+   Low-stock is text-only (no background/border) so it layers over a generic item's blue
+   without hiding it. Out-of-stock (red) is the one state that also owns background/border,
+   and — being declared last — wins over generic's blue when an item is both. */
 .card.generic,.prep-card.generic,.stock-card.generic,.restock-card.generic{background:linear-gradient(135deg,#e8f2fc,#dce9f8);border-color:#3498db;}
 .card.generic .pname,.prep-card.generic .pname,.stock-card.generic .pname,.restock-card.generic .pname{font-weight:700;}
-.card.low-stock,.prep-card.low-stock,.stock-card.low-stock,.restock-card.low-stock{border-color:#f0d000;background:#fffadb;}
 .card.low-stock .pname,.prep-card.low-stock .pname,.stock-card.low-stock .pname,.restock-card.low-stock .pname{color:#d4ac00!important;font-weight:700;}
 .card.out-of-stock,.prep-card.out-of-stock,.stock-card.out-of-stock,.restock-card.out-of-stock{border-color:#ffcccc;background:#fff8f8;}
 .card.out-of-stock .pname,.prep-card.out-of-stock .pname,.stock-card.out-of-stock .pname,.restock-card.out-of-stock .pname{color:var(--red)!important;font-weight:700;}
@@ -415,13 +415,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);
 <script>
 // ─── DATA (exact order + exact codes from forms) ───────────────────────────
 
-// A product is "generic" (not a real person's name) if it's in the category's curated
-// list, OR is a single letter — every personalised category substitutes a bare letter
-// (A-Z, except Q/U/X/Y) for names that ran too low to keep printing individually.
-function isGenericName(genericSet, name){
-  return genericSet.has(name) || /^[A-Za-z]$/.test((name||'').trim());
-}
-
 // Glass Bird Suncatcher: 144 items — from order form (GLASS BIRD SUNCATCHER.xlsx),
 // read top-to-bottom down each of the form's 8 name columns, left→right.
 const GS_GENERIC = new Set(['Blank - Pink','Blank - Blue','Loved','Friend','Mum','Nana','Grandma','Sister']);
@@ -441,7 +434,7 @@ const GS = [
   [121,'Ruth'],[122,'Sally'],[123,'Sam'],[124,'Sandra'],[125,'Sara'],[126,'Sarah'],[127,'Sharon'],[128,'Sheila'],[129,'Shirley'],[130,'Sophie'],
   [131,'Stacey'],[132,'Steph'],[133,'Sue'],[134,'Susan'],[135,'Suzanne'],[136,'Sylvia'],[137,'Tina'],[138,'Tracey'],[139,'Tracy'],[140,'Val'],
   [141,'Vicky'],[142,'Wendy'],[143,'Yvonne'],[144,'Zoe']
-].map(([n,name])=>({id:`gs-${n}`,name,code:`GS${String(n).padStart(3,'0')}`,isGeneric:isGenericName(GS_GENERIC, name)}));
+].map(([n,name])=>({id:`gs-${n}`,name,code:`GS${String(n).padStart(3,'0')}`,isGeneric:GS_GENERIC.has(name)}));
 
 // Garden Signs: 162 items, columns read left→right across 4 cols per row
 // Form numbering: Mum=1,Dad=2,...,Roy=162
@@ -464,7 +457,7 @@ const BS = [
   [141,'Sharon'],[142,'Sheila'],[143,'Shirley'],[144,'Simon'],[145,'Steph'],[146,'Stephen'],[147,'Steve'],[148,'Stuart'],[149,'Sue'],[150,'Susan'],
   [151,'Suzanne'],[152,'Sylvia'],[153,'Terry'],[154,'Tim'],[155,'Tina'],[156,'Tom'],[157,'Tony'],[158,'Tracey'],[159,'Val'],[160,'Wendy'],
   [161,'William'],[162,'Yvonne']
-].map(([n,name])=>({id:`bs-${n}`,name,code:`BS${String(n).padStart(3,'0')}`,isGeneric:isGenericName(BS_GENERIC, name)}));
+].map(([n,name])=>({id:`bs-${n}`,name,code:`BS${String(n).padStart(3,'0')}`,isGeneric:BS_GENERIC.has(name)}));
 
 // Heart of Home: 132 items — exact order from form p2
 // Form has 2 columns side by side, numbered sequentially down left col (1-17) then right col (18-33),
@@ -495,7 +488,7 @@ const HP = [
   [117,'Sheila'],[118,'Shirley'],[119,'Sophie'],[120,'Steph'],[121,'Sue'],[122,'Susan'],
   [123,'Suzanne'],[124,'Sylvia'],[125,'Tina'],[126,'Tracey'],[127,'Tracy'],[128,'Val'],
   [129,'Vicky'],[130,'Wendy'],[131,'Yvonne'],[132,'Zoe']
-].map(([n,name])=>({id:`hp-${n}`,name,code:`HP${String(n).padStart(3,'0')}`,isGeneric:isGenericName(HP_GENERIC, name)}));
+].map(([n,name])=>({id:`hp-${n}`,name,code:`HP${String(n).padStart(3,'0')}`,isGeneric:HP_GENERIC.has(name)}));
 
 // Bendy Bot: 162 items — exact order from form p3
 const RB_GENERIC = new Set(['Blank Blue','Blank Pink','Blank Yellow','Blank Red',"I'm a Star",'Super Mum','Super Dad','G/Daughter','Grandson','Best Friend','I ❤ U','Bendy Bot','Fidget Fight.','Super Hero']);
@@ -517,7 +510,7 @@ const RB = [
   [141,'Rosie'],[142,'Ruby'],[143,'Sam'],[144,'S'],[145,'Seb'],[146,'Sienna'],[147,'Sofia'],[148,'Sophia'],[149,'Sophie'],[150,'Summer'],
   [151,'Teddy'],[152,'Thea'],[153,'Theo'],[154,'T'],[155,'Toby'],[156,'Tommy'],[157,'V'],[158,'William'],[159,'W'],[160,'Zachary'],
   [161,'Zara'],[162,'Z']
-].map(([n,name])=>({id:`rb-${n}`,name,code:`RB${String(n).padStart(3,'0')}`,isGeneric:isGenericName(RB_GENERIC, name)}));
+].map(([n,name])=>({id:`rb-${n}`,name,code:`RB${String(n).padStart(3,'0')}`,isGeneric:RB_GENERIC.has(name)}));
 
 // Signtastic Signs — exact codes from form p4
 const SS = [
@@ -627,7 +620,7 @@ const IN_FINAL = [
   [150,'T'],[151,'Thea'],[152,'Tia'],[153,'Tilly'],
   [154,'V'],[155,'Victoria'],[156,'Violet'],[157,'Willow'],
   [158,'Z'],[159,'Zara'],[160,'Zoe']
-].map(([n,name])=>({id:`in-${n}`,name,code:`IN${String(n).padStart(3,'0')}`,isGeneric:isGenericName(IN_GENERIC, name)}));
+].map(([n,name])=>({id:`in-${n}`,name,code:`IN${String(n).padStart(3,'0')}`,isGeneric:IN_GENERIC.has(name)}));
 
 // Identity Bracelet: 156 items — exact from form (image 6)
 const IB_GENERIC = new Set(['Compass shape','Anchor shape','Arrow shape','Mum ♡','Daughter ♡','Sister ♡','Heart shape','Links shape','Infinity shape','BEST FRIEND','LOVED','FOREVER','Moon shape','Cross shape','Key shape','Tree shape','Flower shape','Feather shape']);
@@ -658,7 +651,7 @@ const IB = [
   [139,'Ruby'],[140,'S'],[141,'Sarah'],[142,'Scarlett'],[143,'Shannon'],[144,'Sienna'],
   [145,'Skye'],[146,'Sofia'],[147,'Sophia'],[148,'Sophie'],[149,'Summer'],[150,'T'],
   [151,'Tia'],[152,'Tilly'],[153,'V'],[154,'Victoria'],[155,'Zara'],[156,'Zoe']
-].map(([n,name])=>({id:`ib-${n}`,name,code:`IB${String(n).padStart(3,'0')}`,isGeneric:isGenericName(IB_GENERIC, name)}));
+].map(([n,name])=>({id:`ib-${n}`,name,code:`IB${String(n).padStart(3,'0')}`,isGeneric:IB_GENERIC.has(name)}));
 
 // Identity Ring: 160 items — exact from form (image 5)
 const IR_GENERIC = new Set(['Infinity Shape','Heart Shape','Cross Shape','Arrow Shape','Stars Shape','Moon & Star','Lotus Shape','Flower Shape','Olive Branch','Bee Shape','Butterfly','Dolphin','Mum ♡','Daughter ♡','Sister ♡','Best Friend']);
@@ -690,7 +683,7 @@ const IR = [
   [145,'Sienna'],[146,'Skye'],[147,'Sofia'],[148,'Sophia'],[149,'Sophie'],[150,'Summer'],
   [151,'T'],[152,'Tia'],[153,'Tilly'],[154,'V'],[155,'Victoria'],[156,'Violet'],
   [157,'Willow'],[158,'Z'],[159,'Zara'],[160,'Zoe']
-].map(([n,name])=>({id:`ir-${n}`,name,code:`IR${String(n).padStart(3,'0')}`,isGeneric:isGenericName(IR_GENERIC, name)}));
+].map(([n,name])=>({id:`ir-${n}`,name,code:`IR${String(n).padStart(3,'0')}`,isGeneric:IR_GENERIC.has(name)}));
 
 // Phone Bracelet: 157 items — exact from form (image 4)
 const CB_GENERIC = new Set(['For You (Pearls)','Mum ♡','Daughter ♡','Sister ♡','Best Friend','Loved','Forever','Hope','Believe','Fearless','Peace','Xoxo','Heart ♡']);
@@ -722,7 +715,7 @@ const CB = [
   [145,'Skye'],[146,'Sofia'],[147,'Sophia'],[148,'Sophie'],[149,'Summer'],[150,'Thea'],
   [151,'Tia'],[152,'Tilly'],[153,'Victoria'],[154,'Violet'],[155,'Willow'],[156,'Zara'],
   [157,'Zoe']
-].map(([n,name])=>({id:`cb-${n}`,name,code:`CB${String(n).padStart(3,'0')}`,isGeneric:isGenericName(CB_GENERIC, name)}));
+].map(([n,name])=>({id:`cb-${n}`,name,code:`CB${String(n).padStart(3,'0')}`,isGeneric:CB_GENERIC.has(name)}));
 
 // Chosen Locket: 160 items — exact from form (image 3)
 const CN_GENERIC = new Set(['Mum','Daughter','Granddaughter','Nan ♥','Sister','Best Friends','I Love You','Princess']);
@@ -754,7 +747,7 @@ const CN = [
   [145,'Seren'],[146,'Sienna'],[147,'Skye'],[148,'Sofia'],[149,'Sophia'],[150,'Sophie'],
   [151,'Summer'],[152,'T'],[153,'Thea'],[154,'Tia'],[155,'Tilly'],[156,'V'],
   [157,'Violet'],[158,'Willow'],[159,'Zara'],[160,'Zoe']
-].map(([n,name])=>({id:`cn-${n}`,name,code:`CN${String(n).padStart(3,'0')}`,isGeneric:isGenericName(CN_GENERIC, name)}));
+].map(([n,name])=>({id:`cn-${n}`,name,code:`CN${String(n).padStart(3,'0')}`,isGeneric:CN_GENERIC.has(name)}));
 
 // Shopping List: 112 items — exact from form p10
 const TS_GENERIC = new Set(['Mum','Grandma','My List','The Chef','Shopping','To Do','This Week','Treats']);
@@ -778,7 +771,7 @@ const TS = [
   [97,'Sara'],[98,'Sarah'],[99,'Sharon'],[100,'Sheila'],[101,'Shirley'],[102,'Stacey'],
   [103,'Stephanie'],[104,'Sue'],[105,'Susan'],[106,'Suzanne'],[107,'Tina'],[108,'Tracy'],
   [109,'Vicky'],[110,'Wendy'],[111,'Yvonne'],[112,'Zoe']
-].map(([n,name])=>({id:`ts-${n}`,name,code:`TS${String(n).padStart(3,'0')}`,isGeneric:isGenericName(TS_GENERIC, name)}));
+].map(([n,name])=>({id:`ts-${n}`,name,code:`TS${String(n).padStart(3,'0')}`,isGeneric:TS_GENERIC.has(name)}));
 
 // Venturous Keyring: 148 items — exact from form (image 2)
 const VK_GENERIC = new Set(['Best Dad','Dad - The Legend','Super Son','Bro','Grandad','Boss','I Love You','Cheers']);
@@ -808,7 +801,7 @@ const VK = [
   [133,'Steve'],[134,'Steven'],[135,'Stuart'],[136,'T'],[137,'Terry'],[138,'Thomas'],
   [139,'Tim'],[140,'Toby'],[141,'Tom'],[142,'Tony'],[143,'Tyler'],[144,'V'],
   [145,'W'],[146,'Wayne'],[147,'William'],[148,'Z']
-].map(([n,name])=>({id:`vk-${n}`,name,code:`VK${String(n).padStart(3,'0')}`,isGeneric:isGenericName(VK_GENERIC, name)}));
+].map(([n,name])=>({id:`vk-${n}`,name,code:`VK${String(n).padStart(3,'0')}`,isGeneric:VK_GENERIC.has(name)}));
 
 // Pet Keyring: exact from form p13 (90 items)
 const MK = [
@@ -962,7 +955,7 @@ const TPN_ALL = [
   [82,'Sophie'],
   [83,'T'],
   [84,'Zoe']
-].map(([n,name])=>({id:`tpn-${n}`,name,code:`TPN${String(n).padStart(3,'0')}`,isGeneric:isGenericName(TPN_GENERIC, name)}));;
+].map(([n,name])=>({id:`tpn-${n}`,name,code:`TPN${String(n).padStart(3,'0')}`,isGeneric:TPN_GENERIC.has(name)}));;
 
 // Tantaprenda Stand bracelets — 2 sides, starts Flower, ends Zoe
 const TPB_SIDES = [
@@ -1057,7 +1050,7 @@ const TPB_ALL = [
   [84,'T'],
   [85,'V'],
   [86,'Zoe']
-].map(([n,name])=>({id:`tpb-${n}`,name,code:`TPB${String(n).padStart(3,'0')}`,isGeneric:isGenericName(TPB_GENERIC, name)}));;
+].map(([n,name])=>({id:`tpb-${n}`,name,code:`TPB${String(n).padStart(3,'0')}`,isGeneric:TPB_GENERIC.has(name)}));;
 
 // ─── CATEGORIES ───────────────────────────────────────────────────────────────
 const CATS = [
