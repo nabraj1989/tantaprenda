@@ -50,10 +50,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);
 .card.on{border-color:var(--gold);background:#fffbf0;}
 .card.oos{opacity:.4;pointer-events:none;}
 .card.gb{background:linear-gradient(135deg,#fffbee,#fff8e1);border:1.5px dashed var(--gold);}
-.card.generic{background:linear-gradient(135deg,#f3e9fb,#ece0f7);border:1.5px solid #9b59b6;}
 .pname{font-size:11px;font-weight:500;line-height:1.25;}
 .card.gb .pname{color:var(--gold);font-weight:700;font-size:11px;text-align:center;}
-.card.generic .pname{font-weight:700;}
 .pcode{font-size:9px;color:var(--muted);}
 .qrow{display:flex;gap:3px;align-items:center;margin-top:2px;}
 .qb{background:var(--warm);border:1px solid var(--border);border-radius:5px;padding:3px 7px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;min-width:26px;text-align:center;}
@@ -104,25 +102,20 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);
 .stock-input:focus{outline:none;border-color:#d4a017;}
 .card.stand{border:2px solid var(--gold);background:#fffdf5;}
 .card.stand .pname{font-weight:700;}
-.card.low-stock .pname{color:#d4ac00!important;font-weight:700;}
-.card.low-stock{border-color:#f0d000;background:#fffadb;}
-.card.out-of-stock .pname{color:var(--red)!important;font-weight:700;}
-.card.out-of-stock{border-color:#ffcccc;background:#fff8f8;}
-.card.generic.low-stock,.card.generic.out-of-stock{background:linear-gradient(135deg,#f3e9fb,#ece0f7);border-color:#9b59b6;}
-.prep-card.low-stock .pname{color:#d4ac00!important;font-weight:700;}
-.prep-card.low-stock{border-color:#f0d000;background:#fffadb;}
-.prep-card.out-of-stock .pname{color:var(--red)!important;font-weight:700;}
-.prep-card.out-of-stock{border-color:#ffcccc;background:#fff8f8;}
-.stock-card.low-stock .pname{color:#d4ac00!important;font-weight:700;}
-.stock-card.out-of-stock .pname{color:var(--red)!important;font-weight:700;}
-.restock-card.low-stock .pname{color:#d4ac00!important;font-weight:700;}
-.restock-card.out-of-stock .pname{color:var(--red)!important;font-weight:700;}
+/* Name coloring — identical across Order/Prepare/Stock/Restock modes.
+   Cascade order sets priority: generic (blue) < low-stock (yellow) < out-of-stock (red),
+   so an item that's both generic and out of stock shows red, never blue. */
+.card.generic,.prep-card.generic,.stock-card.generic,.restock-card.generic{background:linear-gradient(135deg,#e8f2fc,#dce9f8);border-color:#3498db;}
+.card.generic .pname,.prep-card.generic .pname,.stock-card.generic .pname,.restock-card.generic .pname{font-weight:700;}
+.card.low-stock,.prep-card.low-stock,.stock-card.low-stock,.restock-card.low-stock{border-color:#f0d000;background:#fffadb;}
+.card.low-stock .pname,.prep-card.low-stock .pname,.stock-card.low-stock .pname,.restock-card.low-stock .pname{color:#d4ac00!important;font-weight:700;}
+.card.out-of-stock,.prep-card.out-of-stock,.stock-card.out-of-stock,.restock-card.out-of-stock{border-color:#ffcccc;background:#fff8f8;}
+.card.out-of-stock .pname,.prep-card.out-of-stock .pname,.stock-card.out-of-stock .pname,.restock-card.out-of-stock .pname{color:var(--red)!important;font-weight:700;}
 .qb.q1-on{background:#1a1208!important;color:#fff!important;border-color:#1a1208!important;}
 .qb.q2-on{background:#1565c0!important;color:#fff!important;border-color:#1565c0!important;}
 .qb.q3-on{background:#2e7d32!important;color:#fff!important;border-color:#2e7d32!important;}
 .qi.q3-on{background:#2e7d32!important;color:#fff!important;border-color:#2e7d32!important;}
 .restock-card{background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:7px;display:flex;flex-direction:column;gap:4px;}
-.restock-card.low{border-color:var(--red);background:#fff5f5;}
 .restock-card .pname{font-size:11px;font-weight:600;line-height:1.25;}
 .restock-card .pcode{font-size:9px;color:var(--muted);}
 .restock-card .cur-stock{font-size:10px;color:var(--muted);margin-top:2px;}
@@ -422,6 +415,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);
 <script>
 // ─── DATA (exact order + exact codes from forms) ───────────────────────────
 
+// A product is "generic" (not a real person's name) if it's in the category's curated
+// list, OR is a single letter — every personalised category substitutes a bare letter
+// (A-Z, except Q/U/X/Y) for names that ran too low to keep printing individually.
+function isGenericName(genericSet, name){
+  return genericSet.has(name) || /^[A-Za-z]$/.test((name||'').trim());
+}
+
 // Glass Bird Suncatcher: 144 items — from order form (GLASS BIRD SUNCATCHER.xlsx),
 // read top-to-bottom down each of the form's 8 name columns, left→right.
 const GS_GENERIC = new Set(['Blank - Pink','Blank - Blue','Loved','Friend','Mum','Nana','Grandma','Sister']);
@@ -441,7 +441,7 @@ const GS = [
   [121,'Ruth'],[122,'Sally'],[123,'Sam'],[124,'Sandra'],[125,'Sara'],[126,'Sarah'],[127,'Sharon'],[128,'Sheila'],[129,'Shirley'],[130,'Sophie'],
   [131,'Stacey'],[132,'Steph'],[133,'Sue'],[134,'Susan'],[135,'Suzanne'],[136,'Sylvia'],[137,'Tina'],[138,'Tracey'],[139,'Tracy'],[140,'Val'],
   [141,'Vicky'],[142,'Wendy'],[143,'Yvonne'],[144,'Zoe']
-].map(([n,name])=>({id:`gs-${n}`,name,code:`GS${String(n).padStart(3,'0')}`,isGeneric:GS_GENERIC.has(name)}));
+].map(([n,name])=>({id:`gs-${n}`,name,code:`GS${String(n).padStart(3,'0')}`,isGeneric:isGenericName(GS_GENERIC, name)}));
 
 // Garden Signs: 162 items, columns read left→right across 4 cols per row
 // Form numbering: Mum=1,Dad=2,...,Roy=162
@@ -464,7 +464,7 @@ const BS = [
   [141,'Sharon'],[142,'Sheila'],[143,'Shirley'],[144,'Simon'],[145,'Steph'],[146,'Stephen'],[147,'Steve'],[148,'Stuart'],[149,'Sue'],[150,'Susan'],
   [151,'Suzanne'],[152,'Sylvia'],[153,'Terry'],[154,'Tim'],[155,'Tina'],[156,'Tom'],[157,'Tony'],[158,'Tracey'],[159,'Val'],[160,'Wendy'],
   [161,'William'],[162,'Yvonne']
-].map(([n,name])=>({id:`bs-${n}`,name,code:`BS${String(n).padStart(3,'0')}`,isGeneric:BS_GENERIC.has(name)}));
+].map(([n,name])=>({id:`bs-${n}`,name,code:`BS${String(n).padStart(3,'0')}`,isGeneric:isGenericName(BS_GENERIC, name)}));
 
 // Heart of Home: 132 items — exact order from form p2
 // Form has 2 columns side by side, numbered sequentially down left col (1-17) then right col (18-33),
@@ -495,7 +495,7 @@ const HP = [
   [117,'Sheila'],[118,'Shirley'],[119,'Sophie'],[120,'Steph'],[121,'Sue'],[122,'Susan'],
   [123,'Suzanne'],[124,'Sylvia'],[125,'Tina'],[126,'Tracey'],[127,'Tracy'],[128,'Val'],
   [129,'Vicky'],[130,'Wendy'],[131,'Yvonne'],[132,'Zoe']
-].map(([n,name])=>({id:`hp-${n}`,name,code:`HP${String(n).padStart(3,'0')}`,isGeneric:HP_GENERIC.has(name)}));
+].map(([n,name])=>({id:`hp-${n}`,name,code:`HP${String(n).padStart(3,'0')}`,isGeneric:isGenericName(HP_GENERIC, name)}));
 
 // Bendy Bot: 162 items — exact order from form p3
 const RB_GENERIC = new Set(['Blank Blue','Blank Pink','Blank Yellow','Blank Red',"I'm a Star",'Super Mum','Super Dad','G/Daughter','Grandson','Best Friend','I ❤ U','Bendy Bot','Fidget Fight.','Super Hero']);
@@ -517,7 +517,7 @@ const RB = [
   [141,'Rosie'],[142,'Ruby'],[143,'Sam'],[144,'S'],[145,'Seb'],[146,'Sienna'],[147,'Sofia'],[148,'Sophia'],[149,'Sophie'],[150,'Summer'],
   [151,'Teddy'],[152,'Thea'],[153,'Theo'],[154,'T'],[155,'Toby'],[156,'Tommy'],[157,'V'],[158,'William'],[159,'W'],[160,'Zachary'],
   [161,'Zara'],[162,'Z']
-].map(([n,name])=>({id:`rb-${n}`,name,code:`RB${String(n).padStart(3,'0')}`,isGeneric:RB_GENERIC.has(name)}));
+].map(([n,name])=>({id:`rb-${n}`,name,code:`RB${String(n).padStart(3,'0')}`,isGeneric:isGenericName(RB_GENERIC, name)}));
 
 // Signtastic Signs — exact codes from form p4
 const SS = [
@@ -627,7 +627,7 @@ const IN_FINAL = [
   [150,'T'],[151,'Thea'],[152,'Tia'],[153,'Tilly'],
   [154,'V'],[155,'Victoria'],[156,'Violet'],[157,'Willow'],
   [158,'Z'],[159,'Zara'],[160,'Zoe']
-].map(([n,name])=>({id:`in-${n}`,name,code:`IN${String(n).padStart(3,'0')}`,isGeneric:IN_GENERIC.has(name)}));
+].map(([n,name])=>({id:`in-${n}`,name,code:`IN${String(n).padStart(3,'0')}`,isGeneric:isGenericName(IN_GENERIC, name)}));
 
 // Identity Bracelet: 156 items — exact from form (image 6)
 const IB_GENERIC = new Set(['Compass shape','Anchor shape','Arrow shape','Mum ♡','Daughter ♡','Sister ♡','Heart shape','Links shape','Infinity shape','BEST FRIEND','LOVED','FOREVER','Moon shape','Cross shape','Key shape','Tree shape','Flower shape','Feather shape']);
@@ -658,7 +658,7 @@ const IB = [
   [139,'Ruby'],[140,'S'],[141,'Sarah'],[142,'Scarlett'],[143,'Shannon'],[144,'Sienna'],
   [145,'Skye'],[146,'Sofia'],[147,'Sophia'],[148,'Sophie'],[149,'Summer'],[150,'T'],
   [151,'Tia'],[152,'Tilly'],[153,'V'],[154,'Victoria'],[155,'Zara'],[156,'Zoe']
-].map(([n,name])=>({id:`ib-${n}`,name,code:`IB${String(n).padStart(3,'0')}`,isGeneric:IB_GENERIC.has(name)}));
+].map(([n,name])=>({id:`ib-${n}`,name,code:`IB${String(n).padStart(3,'0')}`,isGeneric:isGenericName(IB_GENERIC, name)}));
 
 // Identity Ring: 160 items — exact from form (image 5)
 const IR_GENERIC = new Set(['Infinity Shape','Heart Shape','Cross Shape','Arrow Shape','Stars Shape','Moon & Star','Lotus Shape','Flower Shape','Olive Branch','Bee Shape','Butterfly','Dolphin','Mum ♡','Daughter ♡','Sister ♡','Best Friend']);
@@ -690,7 +690,7 @@ const IR = [
   [145,'Sienna'],[146,'Skye'],[147,'Sofia'],[148,'Sophia'],[149,'Sophie'],[150,'Summer'],
   [151,'T'],[152,'Tia'],[153,'Tilly'],[154,'V'],[155,'Victoria'],[156,'Violet'],
   [157,'Willow'],[158,'Z'],[159,'Zara'],[160,'Zoe']
-].map(([n,name])=>({id:`ir-${n}`,name,code:`IR${String(n).padStart(3,'0')}`,isGeneric:IR_GENERIC.has(name)}));
+].map(([n,name])=>({id:`ir-${n}`,name,code:`IR${String(n).padStart(3,'0')}`,isGeneric:isGenericName(IR_GENERIC, name)}));
 
 // Phone Bracelet: 157 items — exact from form (image 4)
 const CB_GENERIC = new Set(['For You (Pearls)','Mum ♡','Daughter ♡','Sister ♡','Best Friend','Loved','Forever','Hope','Believe','Fearless','Peace','Xoxo','Heart ♡']);
@@ -722,7 +722,7 @@ const CB = [
   [145,'Skye'],[146,'Sofia'],[147,'Sophia'],[148,'Sophie'],[149,'Summer'],[150,'Thea'],
   [151,'Tia'],[152,'Tilly'],[153,'Victoria'],[154,'Violet'],[155,'Willow'],[156,'Zara'],
   [157,'Zoe']
-].map(([n,name])=>({id:`cb-${n}`,name,code:`CB${String(n).padStart(3,'0')}`,isGeneric:CB_GENERIC.has(name)}));
+].map(([n,name])=>({id:`cb-${n}`,name,code:`CB${String(n).padStart(3,'0')}`,isGeneric:isGenericName(CB_GENERIC, name)}));
 
 // Chosen Locket: 160 items — exact from form (image 3)
 const CN_GENERIC = new Set(['Mum','Daughter','Granddaughter','Nan ♥','Sister','Best Friends','I Love You','Princess']);
@@ -754,7 +754,7 @@ const CN = [
   [145,'Seren'],[146,'Sienna'],[147,'Skye'],[148,'Sofia'],[149,'Sophia'],[150,'Sophie'],
   [151,'Summer'],[152,'T'],[153,'Thea'],[154,'Tia'],[155,'Tilly'],[156,'V'],
   [157,'Violet'],[158,'Willow'],[159,'Zara'],[160,'Zoe']
-].map(([n,name])=>({id:`cn-${n}`,name,code:`CN${String(n).padStart(3,'0')}`,isGeneric:CN_GENERIC.has(name)}));
+].map(([n,name])=>({id:`cn-${n}`,name,code:`CN${String(n).padStart(3,'0')}`,isGeneric:isGenericName(CN_GENERIC, name)}));
 
 // Shopping List: 112 items — exact from form p10
 const TS_GENERIC = new Set(['Mum','Grandma','My List','The Chef','Shopping','To Do','This Week','Treats']);
@@ -778,7 +778,7 @@ const TS = [
   [97,'Sara'],[98,'Sarah'],[99,'Sharon'],[100,'Sheila'],[101,'Shirley'],[102,'Stacey'],
   [103,'Stephanie'],[104,'Sue'],[105,'Susan'],[106,'Suzanne'],[107,'Tina'],[108,'Tracy'],
   [109,'Vicky'],[110,'Wendy'],[111,'Yvonne'],[112,'Zoe']
-].map(([n,name])=>({id:`ts-${n}`,name,code:`TS${String(n).padStart(3,'0')}`,isGeneric:TS_GENERIC.has(name)}));
+].map(([n,name])=>({id:`ts-${n}`,name,code:`TS${String(n).padStart(3,'0')}`,isGeneric:isGenericName(TS_GENERIC, name)}));
 
 // Venturous Keyring: 148 items — exact from form (image 2)
 const VK_GENERIC = new Set(['Best Dad','Dad - The Legend','Super Son','Bro','Grandad','Boss','I Love You','Cheers']);
@@ -808,7 +808,7 @@ const VK = [
   [133,'Steve'],[134,'Steven'],[135,'Stuart'],[136,'T'],[137,'Terry'],[138,'Thomas'],
   [139,'Tim'],[140,'Toby'],[141,'Tom'],[142,'Tony'],[143,'Tyler'],[144,'V'],
   [145,'W'],[146,'Wayne'],[147,'William'],[148,'Z']
-].map(([n,name])=>({id:`vk-${n}`,name,code:`VK${String(n).padStart(3,'0')}`,isGeneric:VK_GENERIC.has(name)}));
+].map(([n,name])=>({id:`vk-${n}`,name,code:`VK${String(n).padStart(3,'0')}`,isGeneric:isGenericName(VK_GENERIC, name)}));
 
 // Pet Keyring: exact from form p13 (90 items)
 const MK = [
@@ -962,7 +962,7 @@ const TPN_ALL = [
   [82,'Sophie'],
   [83,'T'],
   [84,'Zoe']
-].map(([n,name])=>({id:`tpn-${n}`,name,code:`TPN${String(n).padStart(3,'0')}`,isGeneric:TPN_GENERIC.has(name)}));;
+].map(([n,name])=>({id:`tpn-${n}`,name,code:`TPN${String(n).padStart(3,'0')}`,isGeneric:isGenericName(TPN_GENERIC, name)}));;
 
 // Tantaprenda Stand bracelets — 2 sides, starts Flower, ends Zoe
 const TPB_SIDES = [
@@ -1057,7 +1057,7 @@ const TPB_ALL = [
   [84,'T'],
   [85,'V'],
   [86,'Zoe']
-].map(([n,name])=>({id:`tpb-${n}`,name,code:`TPB${String(n).padStart(3,'0')}`,isGeneric:TPB_GENERIC.has(name)}));;
+].map(([n,name])=>({id:`tpb-${n}`,name,code:`TPB${String(n).padStart(3,'0')}`,isGeneric:isGenericName(TPB_GENERIC, name)}));;
 
 // ─── CATEGORIES ───────────────────────────────────────────────────────────────
 const CATS = [
@@ -1173,7 +1173,7 @@ function qClass(q){ return q===1?' q1':q===2?' q2':q>2?' q3':''; }
 function lowStockClass(id){
   if(inventory[id]===undefined) return ''; // not tracked yet — no color until stock is counted
   if(inventory[id]<=0) return ' out-of-stock';
-  if(inventory[id]<10) return ' low-stock';
+  if(inventory[id]<=10) return ' low-stock';
   return '';
 }
 
@@ -1987,7 +1987,7 @@ function prepCardH(p){
   const pr = prepare[p.id];
   const avail = (pr && pr.avail !== undefined) ? pr.avail : defaultAvail(p.id, ordered);
   const lsc = lowStockClass(p.id);
-  return `<div class="prep-card has-order${lsc}" id="pc-${p.id}">
+  return `<div class="prep-card has-order${p.isGeneric?' generic':''}${lsc}" id="pc-${p.id}">
     <div class="pname">${p.name}</div>
     ${p.code ? `<div class="pcode">${p.code}</div>` : ''}
     <div style="display:flex;gap:4px;align-items:center;margin-top:3px;min-width:0;">
@@ -2653,7 +2653,7 @@ function stockCardH(p){
   const nameEsc = p.name.replace(/'/g,"\\'");
   const codeEsc = (p.code||'');
   const lsc = lowStockClass(p.id);
-  return '<div class="stock-card'+lsc+'" id="stk-'+p.id+'">'
+  return '<div class="stock-card'+(p.isGeneric?' generic':'')+lsc+'" id="stk-'+p.id+'">'
     +'<div class="pname">'+p.name+'</div>'
     +(p.code ? '<div class="pcode">'+p.code+'</div>' : '')
     +'<div style="display:flex;gap:4px;align-items:center;margin-top:4px;">'
@@ -2764,37 +2764,14 @@ function updateStockTotal(catId){
 }
 
 // ─── RESTOCK MODE ─────────────────────────────────────────────────────────────
-const LOW_STOCK_THRESHOLDS = {
-  'gs': 20,  // Glass Bird Suncatcher (default estimate — adjust if you have a real threshold)
-  'bs': 30,  // British Birds: Garden Signs
-  'hp': 20,  // Heart of the Home
-  'rb': 20,  // Bendy Bot
-  'ss': 10,  // Signtastic Signs
-  'kr': 10,  // Woody Pals Keyring
-  'in': 20,  // Identity Necklace
-  'ir': 10,  // Identity Ring
-  'ib': 15,  // Identity Bracelet
-  'cb': 10,  // Chosen Phone Bracelet
-  'cn': 10,  // Chosen Locket
-  'ts': 10,  // Shopping List
-  'vk': 10,  // Venturous Keyring & Bottle Opener
-  'mk': 10,  // Pet Keyring
-  'ac': 10,  // Pet Coasters
-  'gj': 10,  // Gemstone Jewellery
-  'tp': 0,   // Mix Jewellery Stand — not reordering, plenty in stock
-};
-let currentRestockCat = '';
-
 function restockCardH(p){
   const stock = inventory[p.id] !== undefined ? inventory[p.id] : null;
-  const threshold = LOW_STOCK_THRESHOLDS[currentRestockCat] || 10;
-  const isLow = stock !== null && threshold > 0 && stock < threshold;
   const qty = restockQty[p.id] || '';
   const stockBadge = stock === null
     ? '<span style="font-size:9px;color:var(--muted);">—</span>'
-    : '<span style="font-size:11px;font-weight:700;padding:2px 6px;border-radius:10px;'+(isLow?'background:#ffe5e5;color:var(--red);':'background:#eef9ee;color:#2e7d32;')+'">'+stock+'</span>';
+    : '<span style="font-size:11px;font-weight:700;padding:2px 6px;border-radius:10px;'+(stock<=0?'background:#ffe5e5;color:var(--red);':stock<=10?'background:#fff3cd;color:#8a6d00;':'background:#eef9ee;color:#2e7d32;')+'">'+stock+'</span>';
   const lsc = lowStockClass(p.id);
-  return '<div class="restock-card'+(isLow?' low':'')+lsc+'" id="rs-'+p.id+'">'
+  return '<div class="restock-card'+(p.isGeneric?' generic':'')+lsc+'" id="rs-'+p.id+'">'
     +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;">'
     +'<div class="pname">'+p.name+'</div>'
     +stockBadge
@@ -2809,7 +2786,6 @@ function restockCardH(p){
 }
 
 function renderRestockMode(cat){
-  currentRestockCat = cat.id;
   const cols = typeof cat.cols === 'number' ? cat.cols : 3;
   const pendingCount = Object.values(pendingRestock).filter(q=>q>0).length;
   let html = '<div class="sub-t">📦 Whole Stock & Display</div><div class="g3">'
@@ -2818,10 +2794,7 @@ function renderRestockMode(cat){
   if(pendingCount>0){
     html += '<button onclick="openReceiveStock()" style="width:100%;background:#2980b9;color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:14px;">📦 Receive Stock ('+pendingCount+' item'+(pendingCount>1?'s':'')+' pending)</button>';
   }
-  const threshold = LOW_STOCK_THRESHOLDS[cat.id] || 10;
-  if(threshold > 0){
-    html += '<div style="font-size:11px;color:var(--muted);margin-bottom:10px;">Items below '+threshold+' in stock are highlighted.</div>';
-  }
+  html += '<div style="font-size:11px;color:var(--muted);margin-bottom:10px;">Items with 10 or fewer in stock are highlighted.</div>';
   if(cat.subsections){
     cat.subsections.forEach(s=>{
       const prods = (s.products||s.allProducts||[]).map(p=>({...p, code:p.code}));
