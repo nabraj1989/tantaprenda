@@ -53,7 +53,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);
 .pname{font-size:11px;font-weight:500;line-height:1.25;}
 .card.gb .pname{color:var(--gold);font-weight:700;font-size:11px;text-align:center;}
 .pcode{font-size:9px;color:var(--muted);}
-.qrow{display:flex;gap:3px;align-items:center;margin-top:2px;}
+.qrow{display:flex;flex-wrap:wrap;gap:3px;align-items:center;margin-top:2px;}
 .qb{background:var(--warm);border:1px solid var(--border);border-radius:5px;padding:3px 7px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;min-width:26px;text-align:center;}
 .qb.on,.qb:active{background:var(--gold);color:var(--dark);border-color:var(--gold);}
 .oos-btn{font-size:9px;color:var(--muted);background:none;border:none;cursor:pointer;padding:0;text-align:left;}
@@ -88,6 +88,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);
 .co{flex:1;padding:8px;border:none;border-radius:6px;background:var(--red);color:#fff;cursor:pointer;font-size:12px;font-weight:700;}
 @media(max-width:360px){.g4{grid-template-columns:repeat(2,1fr);}.g3{grid-template-columns:repeat(3,1fr);}}
 .cat-img{width:80px;height:80px;object-fit:contain;border-radius:8px;margin-bottom:8px;display:inline-block;vertical-align:middle;margin-right:10px;border:1px solid #eee;}
+.np-scatter-row{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;padding:6px 0;}
+.np-scatter-row img{width:54px;height:54px;object-fit:cover;border-radius:6px;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.2);flex-shrink:0;}
+.np-scatter-title{margin:0 0 10px;text-align:center;}
+@media(max-width:420px){.np-scatter-row img{width:40px;height:40px;}}
+@media(max-width:340px){.np-scatter-row img{width:32px;height:32px;}}
 /* FIXED BOTTOM SEND BAR */
 .send-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:2px solid var(--border);padding:10px 14px;display:flex;gap:8px;align-items:center;z-index:150;box-shadow:0 -4px 16px rgba(0,0,0,.1);}
 .send-bar .sb-info{flex:1;display:flex;flex-direction:column;gap:1px;}
@@ -347,6 +352,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);
   <div class="pin-box">
     <h3 id="qty-popup-title">Select quantity</h3>
     <div class="qty-picker-grid" id="qty-popup-grid"></div>
+    <div id="qty-popup-custom" style="display:flex;gap:8px;align-items:center;">
+      <input type="number" min="12" step="1" inputmode="numeric" id="qty-popup-custom-input" class="restock-input" placeholder="More than 11" style="margin-top:0;" onkeydown="if(event.key==='Enter') pickQtyPopupCustom()">
+      <button class="pin-btn" style="width:auto;padding:12px 16px;white-space:nowrap;" onclick="pickQtyPopupCustom()">Set</button>
+    </div>
     <span class="pin-cancel" onclick="closeQtyPopup()">Cancel</span>
   </div>
 </div>
@@ -1052,8 +1061,119 @@ const TPB_ALL = [
   [86,'Zoe']
 ].map(([n,name])=>({id:`tpb-${n}`,name,code:`TPB${String(n).padStart(3,'0')}`,isGeneric:TPB_GENERIC.has(name)}));;
 
+// ─── NEW SENTIMENT RANGE (Keepsake / Keyring / Magnet / Magnetic Bookmark / Tin Card) ──
+// Product codes + names transcribed from the supplier packing list (Invoice 30741,
+// photographed 2026-09-01) — one shared display stand, 5 item types, 79 SKUs total.
+const NP_KEEPSAKE = [
+  {id:'iwg1203',name:'Mum',code:'IWG1203'},
+  {id:'iwg1204',name:'Good Friends Are Like Angels',code:'IWG1204'},
+  {id:'iwg1205',name:'Ten Reasons Why I Love You',code:'IWG1205'},
+  {id:'iwg1206',name:'For My Soulmate',code:'IWG1206'},
+  {id:'iwg1208',name:'A Big Hug For You',code:'IWG1208'},
+  {id:'iwg1210',name:'Hang In There',code:'IWG1210'},
+  {id:'iwg1211',name:'Sister',code:'IWG1211'},
+  {id:'iwg1212',name:'I Love You Mum',code:'IWG1212'},
+  {id:'iwg1213',name:'Auntie',code:'IWG1213'},
+  {id:'iwg1214',name:'Best Friends Forever',code:'IWG1214'},
+  {id:'iwg1215',name:'Special Grandma',code:'IWG1215'},
+  {id:'iwg1217',name:'Son',code:'IWG1217'},
+  {id:'iwg1219',name:'Special Granddaughter',code:'IWG1219'},
+  {id:'iwg1220',name:"You're A Mum In A Million",code:'IWG1220'},
+  {id:'iwg1221',name:'An Angel For You',code:'IWG1221'},
+  {id:'iwg1222',name:'To My Grandad',code:'IWG1222'},
+  {id:'iwg1223',name:'Special Dad',code:'IWG1223'}
+];
+const NP_KEYRING = [
+  {id:'iwg1002',name:'Special Friend',code:'IWG1002'},
+  {id:'iwg1003',name:'Mum',code:'IWG1003'},
+  {id:'iwg1006',name:'To The Man I Love',code:'IWG1006'},
+  {id:'iwg1007',name:'For My Soulmate',code:'IWG1007'},
+  {id:'iwg1008',name:'A Big Hug For You',code:'IWG1008'},
+  {id:'iwg1009',name:'To A Special Daughter',code:'IWG1009'},
+  {id:'iwg1010',name:'Sister',code:'IWG1010'},
+  {id:'iwg1011',name:'I Love You Mum',code:'IWG1011'},
+  {id:'iwg1012',name:"You're A Mum In A Million",code:'IWG1012'},
+  {id:'iwg1013',name:'An Angel For You',code:'IWG1013'},
+  {id:'iwg1014',name:'Best Friends Forever',code:'IWG1014'},
+  {id:'iwg1015',name:'Our Special Friendship',code:'IWG1015'},
+  {id:'iwg1016',name:'Special Dad',code:'IWG1016'},
+  {id:'iwg1017',name:'Special Grandma',code:'IWG1017'},
+  {id:'iwg1018',name:'To My Grandad',code:'IWG1018'},
+  {id:'iwg1019',name:'Auntie',code:'IWG1019'},
+  {id:'iwg1020',name:'Son',code:'IWG1020'},
+  {id:'iwg1021',name:'Special Granddaughter',code:'IWG1021'},
+  {id:'iwg1022',name:'To A Special Person',code:'IWG1022'},
+  {id:'iwg1023',name:'Special Grandson',code:'IWG1023'},
+  {id:'iwg1024',name:'Friends Like You Are Hard To Find',code:'IWG1024'}
+];
+const NP_BOOKMARK = [
+  {id:'iwg1304',name:'Good Friends Are Like Angels',code:'IWG1304'},
+  {id:'iwg1305',name:'Ten Reasons Why I Love You',code:'IWG1305'},
+  {id:'iwg1306',name:'For My Soulmate',code:'IWG1306'},
+  {id:'iwg1307',name:'To A Special Daughter',code:'IWG1307'},
+  {id:'iwg1309',name:'To A Special Reader',code:'IWG1309'},
+  {id:'iwg1310',name:'Best Friends Forever',code:'IWG1310'},
+  {id:'iwg1311',name:'Special Grandma',code:'IWG1311'}
+];
+const NP_MAGNET = [
+  {id:'iwg1101',name:'A Little Hug',code:'IWG1101'},
+  {id:'iwg1102',name:'Special Friend',code:'IWG1102'},
+  {id:'iwg1103',name:'Mum',code:'IWG1103'},
+  {id:'iwg1104',name:'Good Friends Are Like Angels',code:'IWG1104'},
+  {id:'iwg1105',name:'Ten Reasons Why I Love You',code:'IWG1105'},
+  {id:'iwg1107',name:'For My Soulmate',code:'IWG1107'},
+  {id:'iwg1108',name:'A Big Hug For You',code:'IWG1108'},
+  {id:'iwg1110',name:'Sister',code:'IWG1110'},
+  {id:'iwg1111',name:'I Love You Mum',code:'IWG1111'},
+  {id:'iwg1112',name:"You're A Mum In A Million",code:'IWG1112'},
+  {id:'iwg1113',name:'An Angel For You',code:'IWG1113'},
+  {id:'iwg1114',name:'Best Friends Forever',code:'IWG1114'},
+  {id:'iwg1115',name:'Our Special Friendship',code:'IWG1115'},
+  {id:'iwg1116',name:'Special Dad',code:'IWG1116'},
+  {id:'iwg1117',name:'Special Grandma',code:'IWG1117'},
+  {id:'iwg1118',name:'To My Grandad',code:'IWG1118'},
+  {id:'iwg1119',name:'Auntie',code:'IWG1119'},
+  {id:'iwg1120',name:'Son',code:'IWG1120'},
+  {id:'iwg1121',name:'Special Granddaughter',code:'IWG1121'},
+  {id:'iwg1122',name:'To A Special Person',code:'IWG1122'},
+  {id:'iwg1123',name:'Special Grandson',code:'IWG1123'},
+  {id:'iwg1124',name:'Friends Like You Are Hard To Find',code:'IWG1124'}
+];
+const NP_PLAQUE = [
+  {id:'iwg0901',name:'Grandma',code:'IWG0901'},
+  {id:'iwg0902',name:'Home Sweet Home',code:'IWG0902'},
+  {id:'iwg0903',name:'Daughter',code:'IWG0903'},
+  {id:'iwg0904',name:'Mum',code:'IWG0904'},
+  {id:'iwg0906',name:'Special Friend',code:'IWG0906'},
+  {id:'iwg0907',name:'Good Friends Are Like Angels',code:'IWG0907'},
+  {id:'iwg0908',name:'Sister',code:'IWG0908'},
+  {id:'iwg0910',name:'You Are My Soulmate',code:'IWG0910'},
+  {id:'iwg0911',name:'Best Friends Forever',code:'IWG0911'},
+  {id:'iwg0914',name:'A Big Hug For You',code:'IWG0914'},
+  {id:'iwg0916',name:'Auntie',code:'IWG0916'}
+];
+
+// Scattered header photos for the New Sentiment Range page — one real shot per item
+// type, spread along the heading line (not squashed into one small collage icon) so
+// every design is actually visible.
+const NP_STAND_PHOTOS = [
+  'images/catalogue/final/new-keepsake-wallet-card.jpg',
+  'images/catalogue/final/new-sentiment-keyring.jpg',
+  'images/catalogue/final/new-magnetic-bookmarks.jpg',
+  'images/catalogue/final/new-sentiment-magnets.jpg',
+  'images/catalogue/final/new-hanging-plaque.jpg'
+];
+
 // ─── CATEGORIES ───────────────────────────────────────────────────────────────
 const CATS = [
+  {id:'np',name:'Inspired Words Range',tab:'Inspired Words',short:'NP',cols:3,
+    subsections:[
+      {title:'Keepsake Wallet Cards',products:NP_KEEPSAKE},
+      {title:'Sentiment Keyrings',products:NP_KEYRING},
+      {title:'Magnetic Bookmarks',products:NP_BOOKMARK},
+      {title:'Sentiment Fridge Magnets',products:NP_MAGNET},
+      {title:'Hanging Tin Card Plaques',products:NP_PLAQUE}
+    ]},
   {id:'gs',name:'Glass Bird Suncatcher',tab:'Glass Bird', short:'GS',cols:4, products:GS},
   {id:'bs',name:'British Birds: Garden Signs',tab:'British Birds',    short:'BS',cols:4, products:BS},
   {id:'hp',name:'Heart of the Home',   short:'HP',cols:3, products:HP},
@@ -1180,7 +1300,8 @@ function cardH(p){
     <div class="qrow">
       <button class="qb${q===1?' on':''}" onclick="sq('${p.id}',1)">1</button>
       <button class="qb${q===2?' on':''}" onclick="sq('${p.id}',2)">2</button>
-      <button class="qb${q>2?' on':''}" onclick="openQtyPopup('${p.id}','order')">${q>2?q:'…'}</button>
+      <button class="qb${q===3?' on':''}" onclick="sq('${p.id}',3)">3</button>
+      <button class="qb${q>3?' on':''}" onclick="openQtyPopup('${p.id}','order')">${q>3?q:'…'}</button>
     </div>
     ${(isGB||isStand)?'':(appMode==='prepare'?(isOos?`<span class="oos-lbl" onclick="toos('${p.id}')">⚠ Out of stock</span>`:`<button class="oos-btn" onclick="toos('${p.id}')">Mark OOS</button>`):'')}
   </div>`;
@@ -1374,9 +1495,16 @@ function renderTP(sub){
 function renderPage(){
   if(appMode==='catalogue'){ renderCataloguePage(); return; }
   const cat=CATS.find(c=>c.id===curTab);
-  const catImg = CAT_IMAGES[cat.id];
-  const imgHtml = catImg ? '<img src="'+catImg+'" class="cat-img" alt="'+cat.name+'">' : '';
-  let html='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'+imgHtml+'<div class="sec-title" style="margin-bottom:0;">'+cat.name+'</div></div>';
+  let html;
+  if(cat.id==='np'){
+    const rots=[-9,6,-4,8,-6];
+    const photos=NP_STAND_PHOTOS.map((src,i)=>'<img src="'+src+'" alt="" style="transform:rotate('+rots[i]+'deg)">').join('');
+    html='<div class="np-scatter-row">'+photos+'</div><div class="sec-title np-scatter-title">'+cat.name+'</div>';
+  } else {
+    const catImg = CAT_IMAGES[cat.id];
+    const imgHtml = catImg ? '<img src="'+catImg+'" class="cat-img" alt="'+cat.name+'">' : '';
+    html='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'+imgHtml+'<div class="sec-title" style="margin-bottom:0;">'+cat.name+'</div></div>';
+  }
 
   if(appMode==='stock'){
     html += renderStockMode(cat);
@@ -1491,16 +1619,21 @@ function openQtyPopup(id, mode){
   qtyPopupTarget = {id, mode};
   const title = document.getElementById('qty-popup-title');
   const grid = document.getElementById('qty-popup-grid');
+  const customRow = document.getElementById('qty-popup-custom');
+  const customInput = document.getElementById('qty-popup-custom-input');
   let options;
   if(mode==='order'){
-    options = [3,4,5,6,7,8];
+    options = [4,5,6,7,8,9,10,11];
     if(title) title.textContent = 'Select quantity';
+    if(customRow) customRow.style.display = 'flex';
   } else {
     const ordered = order[id] || 0;
     options = [];
     for(let i=0;i<=ordered;i++) options.push(i);
     if(title) title.textContent = 'Select available quantity';
+    if(customRow) customRow.style.display = 'none';
   }
+  if(customInput) customInput.value = '';
   grid.innerHTML = options.map(n=>`<button onclick="pickQtyPopup(${n})">${n}</button>`).join('');
   document.getElementById('qty-overlay').classList.add('open');
 }
@@ -1523,6 +1656,15 @@ function pickQtyPopup(val){
     refreshPrepCard(id);
   }
   closeQtyPopup();
+}
+
+// Custom quantity for orders of more than 10 (order mode only — the popup
+// hides this row in prepare mode, where quantity is capped by what was ordered).
+function pickQtyPopupCustom(){
+  const input = document.getElementById('qty-popup-custom-input');
+  const val = parseInt(input && input.value, 10);
+  if(!val || val<=0) return;
+  pickQtyPopup(val);
 }
 
 // ─── PREPARE MODE: Available-quantity → stock correction ───────────────────
@@ -2212,6 +2354,7 @@ const CAT_CODES = {
   'Pet Coasters':                      400,
   'Gemstone Jewellery':                480,
   'Mix Jewellery Stand':               125,
+  'Inspired Words Range':                900,
 };
 async function sendBillSummary(){
   if(!confirm('Are you sure you want to send the bill summary?')) return;
