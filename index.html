@@ -1290,18 +1290,27 @@ function lowStockClass(id){
   return '';
 }
 
+// Inspired Words, Bendy Bot, Pet Keyring & Pet Coasters get a wider quantity
+// row (1,2,3,…) with a higher popup range — these ranges see larger per-design
+// orders than the rest of the catalogue, which keeps the plain (1,2,…) row.
+const WIDE_QTY_PREFIXES = ['rb-','mk-','ac-','iwg'];
 function cardH(p){
   const q=order[p.id]||0,isOos=oos[p.id],isGB=!!p.isGB,isStand=!!p.isStand;
   const qc = isGB||isStand ? '' : qClass(q);
   const lsc = isGB||isStand ? '' : lowStockClass(p.id);
-  return `<div class="card${q>0?' on':''}${isOos?' oos':''}${isGB?' gb':''}${isStand?' stand':''}${p.isGeneric?' generic':''}${qc}${lsc}" id="c-${p.id}">
-    <div class="pname">${p.name}</div>
-    ${p.code?`<div class="pcode">${p.code}</div>`:''}
-    <div class="qrow">
+  const wide = !isGB && !isStand && WIDE_QTY_PREFIXES.some(pre=>p.id.startsWith(pre));
+  const qrowBtns = wide ? `
       <button class="qb${q===1?' on':''}" onclick="sq('${p.id}',1)">1</button>
       <button class="qb${q===2?' on':''}" onclick="sq('${p.id}',2)">2</button>
       <button class="qb${q===3?' on':''}" onclick="sq('${p.id}',3)">3</button>
-      <button class="qb${q>3?' on':''}" onclick="openQtyPopup('${p.id}','order')">${q>3?q:'…'}</button>
+      <button class="qb${q>3?' on':''}" onclick="openQtyPopup('${p.id}','order',true)">${q>3?q:'…'}</button>` : `
+      <button class="qb${q===1?' on':''}" onclick="sq('${p.id}',1)">1</button>
+      <button class="qb${q===2?' on':''}" onclick="sq('${p.id}',2)">2</button>
+      <button class="qb${q>2?' on':''}" onclick="openQtyPopup('${p.id}','order',false)">${q>2?q:'…'}</button>`;
+  return `<div class="card${q>0?' on':''}${isOos?' oos':''}${isGB?' gb':''}${isStand?' stand':''}${p.isGeneric?' generic':''}${qc}${lsc}" id="c-${p.id}">
+    <div class="pname">${p.name}</div>
+    ${p.code?`<div class="pcode">${p.code}</div>`:''}
+    <div class="qrow">${qrowBtns}
     </div>
     ${(isGB||isStand)?'':(appMode==='prepare'?(isOos?`<span class="oos-lbl" onclick="toos('${p.id}')">⚠ Out of stock</span>`:`<button class="oos-btn" onclick="toos('${p.id}')">Mark OOS</button>`):'')}
   </div>`;
@@ -1615,7 +1624,7 @@ function sq(id,qty){
 // on mobile zooms the page in, tapping a button doesn't.
 let qtyPopupTarget = null; // {id, mode:'order'|'prepare'}
 
-function openQtyPopup(id, mode){
+function openQtyPopup(id, mode, wide){
   qtyPopupTarget = {id, mode};
   const title = document.getElementById('qty-popup-title');
   const grid = document.getElementById('qty-popup-grid');
@@ -1623,7 +1632,9 @@ function openQtyPopup(id, mode){
   const customInput = document.getElementById('qty-popup-custom-input');
   let options;
   if(mode==='order'){
-    options = [4,5,6,7,8,9,10,11];
+    options = wide ? [4,5,6,7,8,9] : [3,4,5,6,7,8];
+    const floor = wide ? 9 : 8;
+    if(customInput){ customInput.min = String(floor+1); customInput.placeholder = `More than ${floor}`; }
     if(title) title.textContent = 'Select quantity';
     if(customRow) customRow.style.display = 'flex';
   } else {
