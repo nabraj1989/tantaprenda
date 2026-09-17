@@ -161,10 +161,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);
 .oc-status.prepared{background:#d4edda;color:#155724;}
 .oc-status.stocked{background:#cce5ff;color:#004085;}
 .order-card .oc-stock{background:#1a7a4a;color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;margin-top:4px;}
-.order-card .oc-emp{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;margin-top:6px;margin-left:6px;background:#e2e3e5;color:#383d41;}
-.order-card .oc-emp.admin{background:#f8d7da;color:#721c24;}
 .order-card .oc-reassign{margin-top:4px;font-size:11px;padding:3px 6px;border-radius:6px;border:1px solid var(--border);}
-.order-card .oc-load{float:right;background:var(--gold);color:var(--dark);border:none;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;margin-top:4px;}
+.order-card .oc-load{float:right;background:var(--gold);color:var(--dark);border:none;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;margin-top:4px;white-space:nowrap;}
 .orders-empty{text-align:center;color:var(--muted);padding:40px 0;font-size:13px;}
 .orders-refresh{width:100%;background:var(--dark);color:var(--gold);border:none;padding:10px;font-size:13px;font-weight:600;cursor:pointer;}
 /* PREPARE MODE */
@@ -1283,6 +1281,14 @@ CATS.forEach(cat=>{
 
 // ─── CARD ─────────────────────────────────────────────────────────────────────
 function qClass(q){ return q===1?' q1':q===2?' q2':q>2?' q3':''; }
+// Just two colors, alternating: 1/3/5+ bright blue, 2/4 black. Zero-in-stock
+// overrides both and turns red, matching the out-of-stock product name color.
+function qtyColor(n, zeroStock){
+  if(zeroStock) return 'var(--red)';
+  if(n<1) return null;
+  return (n>4 || n%2===1) ? '#1565c0' : 'var(--dark)';
+}
+function qtyNumHtml(n, zeroStock){ const c=qtyColor(n, zeroStock); return c ? `<span style="color:${c};font-weight:800;">${n}</span>` : n; }
 function lowStockClass(id){
   if(inventory[id]===undefined) return ''; // not tracked yet — no color until stock is counted
   if(inventory[id]<=0) return ' out-of-stock';
@@ -1299,14 +1305,15 @@ function cardH(p){
   const qc = isGB||isStand ? '' : qClass(q);
   const lsc = isGB||isStand ? '' : lowStockClass(p.id);
   const wide = !isGB && !isStand && WIDE_QTY_PREFIXES.some(pre=>p.id.startsWith(pre));
+  const zeroStock = !isGB && !isStand && inventory[p.id]!==undefined && inventory[p.id]<=0;
   const qrowBtns = wide ? `
-      <button class="qb${q===1?' on':''}" onclick="sq('${p.id}',1)">1</button>
-      <button class="qb${q===2?' on':''}" onclick="sq('${p.id}',2)">2</button>
-      <button class="qb${q===3?' on':''}" onclick="sq('${p.id}',3)">3</button>
-      <button class="qb${q>3?' on':''}" onclick="openQtyPopup('${p.id}','order',true)">${q>3?q:'…'}</button>` : `
-      <button class="qb${q===1?' on':''}" onclick="sq('${p.id}',1)">1</button>
-      <button class="qb${q===2?' on':''}" onclick="sq('${p.id}',2)">2</button>
-      <button class="qb${q>2?' on':''}" onclick="openQtyPopup('${p.id}','order',false)">${q>2?q:'…'}</button>`;
+      <button class="qb${q===1?' on':''}" onclick="sq('${p.id}',1)">${qtyNumHtml(1,zeroStock)}</button>
+      <button class="qb${q===2?' on':''}" onclick="sq('${p.id}',2)">${qtyNumHtml(2,zeroStock)}</button>
+      <button class="qb${q===3?' on':''}" onclick="sq('${p.id}',3)">${qtyNumHtml(3,zeroStock)}</button>
+      <button class="qb${q>3?' on':''}" onclick="openQtyPopup('${p.id}','order',true)">${q>3?qtyNumHtml(q,zeroStock):'…'}</button>` : `
+      <button class="qb${q===1?' on':''}" onclick="sq('${p.id}',1)">${qtyNumHtml(1,zeroStock)}</button>
+      <button class="qb${q===2?' on':''}" onclick="sq('${p.id}',2)">${qtyNumHtml(2,zeroStock)}</button>
+      <button class="qb${q>2?' on':''}" onclick="openQtyPopup('${p.id}','order',false)">${q>2?qtyNumHtml(q,zeroStock):'…'}</button>`;
   return `<div class="card${q>0?' on':''}${isOos?' oos':''}${isGB?' gb':''}${isStand?' stand':''}${p.isGeneric?' generic':''}${qc}${lsc}" id="c-${p.id}">
     <div class="pname">${p.name}</div>
     ${p.code?`<div class="pcode">${p.code}</div>`:''}
@@ -2139,11 +2146,11 @@ function prepCardH(p){
     <div style="display:flex;gap:4px;align-items:center;margin-top:3px;min-width:0;">
       <div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:0;">
         <span class="prep-lbl">Ordered</span>
-        <span class="prep-val ordered" style="font-size:14px;">${ordered}</span>
+        <span class="prep-val ordered" style="font-size:14px;">${qtyNumHtml(ordered,false)}</span>
       </div>
       <div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:0;">
         <span class="prep-lbl">Available</span>
-        <button class="prep-input avail-inp" id="avail-inp-${p.id}" onclick="openPrepAvailEditor('${p.id}')" style="width:100%;cursor:pointer;">${avail}</button>
+        <button class="prep-input avail-inp" id="avail-inp-${p.id}" onclick="openPrepAvailEditor('${p.id}')" style="width:100%;cursor:pointer;">${qtyNumHtml(avail,avail<=0)}</button>
       </div>
     </div>
   </div>`;
@@ -2529,7 +2536,10 @@ async function saveOrderToSupabase(clientName, clientCompany, clientPhone) {
     special_instructions: catSI,
     returns: catReturns,
     status: 'pending',
-    employee: currentEmployee || 'admin'
+    // currentEmployee is undefined for a client who never logged in, null for
+    // admin, or an employee's name — undefined must map to 'client', not
+    // 'admin', or client-placed orders get silently attributed to the admin.
+    employee: currentEmployee === undefined ? 'client' : (currentEmployee || 'admin')
   };
   try {
     await sbFetch('orders', {
@@ -2600,6 +2610,17 @@ function checkPin() {
   const isAdmin = val === APP_PIN;
   const isEmployee = EMPLOYEES[val];
 
+  if(pinTarget === 'delete-order') {
+    if(!isAdmin) {
+      document.getElementById('pin-err').style.display = 'block';
+      document.getElementById('pin-input').value = '';
+      return;
+    }
+    closePinDialog();
+    const id = pendingDeleteOrderId; pendingDeleteOrderId = null;
+    if(id) performDeleteOrder(id);
+    return;
+  }
 
   if(isAdmin || isEmployee) {
     currentEmployee = isAdmin ? null : EMPLOYEES[val];
@@ -2639,20 +2660,30 @@ async function loadOrders() {
       list.innerHTML = '<div class="orders-empty">No orders yet.</div>';
       return;
     }
+    // Unprepared orders float to the top (so an old one never gets buried by
+    // newer arrivals), prepared-not-yet-stocked in the middle, stocked at the
+    // bottom. Array.sort is stable, so the created_at.desc order from the
+    // query is preserved within each group.
+    const statusRank = o => {
+      if(o.status !== 'prepared') return 0;
+      const stocked = o.prepare_data && o.prepare_data._stocked===true;
+      return stocked ? 2 : 1;
+    };
+    data.sort((a,b)=>statusRank(a)-statusRank(b));
     list.innerHTML = data.map(o => {
       const date = new Date(o.created_at).toLocaleDateString('en-GB') + ' ' +
                    new Date(o.created_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
       const items = Object.values(o.order_data||{});
       const totalUnits = items.reduce((s,i)=>s+i.qty,0);
       const cats = [...new Set(items.map(i=>i.cat))].join(', ');
-      const emp = o.employee || 'admin';
+      const emp = o.employee || 'client';
       const isAdminView = currentEmployee === null;
-      const empBadge = `<span class="oc-emp${emp==='admin'?' admin':''}">🏷 ${emp==='admin'?'Admin':emp}</span>`;
       const isStocked = o.status==='prepared' && o.prepare_data && o.prepare_data._stocked===true;
       const statusClass = o.status==='pending' ? 'pending' : (isStocked ? 'stocked' : 'prepared');
       const statusLabel = o.status==='pending' ? '⏳ Pending' : (isStocked ? '📦 Stocked' : '✅ Prepared');
       const reassignSelect = isAdminView ? `
             <select class="oc-reassign" onchange="reassignOrder('${o.id}', this.value)">
+              <option value="client" ${emp==='client'?'selected':''}>Client</option>
               <option value="admin" ${emp==='admin'?'selected':''}>Admin</option>
               <option value="Carlos" ${emp==='Carlos'?'selected':''}>Carlos</option>
               <option value="Margaret" ${emp==='Margaret'?'selected':''}>Margaret</option>
@@ -2663,13 +2694,14 @@ async function loadOrders() {
             <div class="oc-name">👤 ${o.client_name||'Unknown'}${o.client_company?' — '+o.client_company:''}</div>
             <div class="oc-date">📅 ${date}${o.client_phone?' · 📞 '+o.client_phone:''}</div>
             <div class="oc-summary">${items.length} items · ${totalUnits} units · ${cats}</div>
-            <span class="oc-status ${statusClass}">${statusLabel}</span>${empBadge}
-            ${reassignSelect}
+            ${!isAdminView ? `<span class="oc-status ${statusClass}">${statusLabel}</span>` : ''}
+            ${isAdminView ? `<div style="display:flex;align-items:center;gap:6px;margin-top:4px;">${reassignSelect}<button onclick="askDeleteOrder('${o.id}')" style="background:none;border:1px solid #c0392b;color:#c0392b;border-radius:6px;padding:3px 8px;font-size:10px;font-weight:700;cursor:pointer;">🗑 Delete</button></div>` : ''}
           </div>
-          <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;">
+          <div style="display:flex;flex-direction:column;gap:14px;align-items:flex-end;flex-shrink:0;">
             <button class="oc-load" onclick="loadOrderIntoPrepare('${o.id}')">Load →</button>
-            ${(isAdminView && o.status==='prepared' && !isStocked) ? `<button class="oc-stock" id="stock-btn-${o.id}" onclick="updateOrderStock('${o.id}')">📦 Update Stock</button>` : ''}
-            ${isAdminView ? `<button onclick="deleteOrder('${o.id}')" style="background:none;border:1px solid #c0392b;color:#c0392b;border-radius:6px;padding:4px 8px;font-size:10px;font-weight:700;cursor:pointer;">🗑 Delete</button>` : ''}
+            ${isAdminView ? ((o.status==='prepared' && !isStocked)
+              ? `<button class="oc-stock" id="stock-btn-${o.id}" onclick="updateOrderStock('${o.id}')">📦 Update Stock</button>`
+              : `<span class="oc-status ${statusClass}" style="margin-top:0;white-space:nowrap;">${statusLabel}</span>`) : ''}
           </div>
         </div>
       </div>`;
@@ -2680,9 +2712,20 @@ async function loadOrders() {
   }
 }
 
-async function deleteOrder(orderId){
+let pendingDeleteOrderId = null;
+function askDeleteOrder(orderId){
   if(currentEmployee !== null){ alert('Only admin can delete orders.'); return; }
-  if(!confirm('Delete this order?')) return;
+  if(!confirm('Delete this order? This cannot be undone.')) return;
+  pendingDeleteOrderId = orderId;
+  pinTarget = 'delete-order';
+  document.getElementById('pin-overlay').classList.add('open');
+  document.getElementById('pin-input').value = '';
+  document.getElementById('pin-err').style.display = 'none';
+  const _pt=document.getElementById('pin-title'); if(_pt) _pt.textContent='🔐 Confirm Delete';
+  const _ps=document.getElementById('pin-subtitle'); if(_ps) _ps.textContent='Enter admin PIN to delete this order';
+  setTimeout(()=>document.getElementById('pin-input').focus(), 100);
+}
+async function performDeleteOrder(orderId){
   try {
     await sbFetch('orders?id=eq.'+orderId, {method:'DELETE'});
     loadOrders(); // refresh list
