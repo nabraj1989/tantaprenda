@@ -1303,11 +1303,13 @@ function lowStockClass(id){
 // row (1,2,3,…) with a higher popup range — these ranges see larger per-design
 // orders than the rest of the catalogue, which keeps the plain (1,2,…) row.
 const WIDE_QTY_PREFIXES = ['rb-','mk-','ac-','iwg'];
-function cardH(p){
+// narrow=true (card sits in a 4-per-row grid) forces the plain 1,2,… row —
+// there's no room for the wider picker.
+function cardH(p,narrow){
   const q=order[p.id]||0,isOos=oos[p.id],isGB=!!p.isGB,isStand=!!p.isStand;
   const qc = isGB||isStand ? '' : qClass(q);
   const lsc = isGB||isStand ? '' : lowStockClass(p.id);
-  const wide = !isGB && !isStand && WIDE_QTY_PREFIXES.some(pre=>p.id.startsWith(pre));
+  const wide = !narrow && !isGB && !isStand && WIDE_QTY_PREFIXES.some(pre=>p.id.startsWith(pre));
   const zeroStock = !isGB && !isStand && inventory[p.id]!==undefined && inventory[p.id]<=0;
   const qrowBtns = wide ? `
       <button class="qb${q===1?' on':''}" onclick="sq('${p.id}',1)">${qtyNumHtml(1,zeroStock)}</button>
@@ -1325,7 +1327,7 @@ function cardH(p){
     ${(isGB||isStand)?'':(appMode==='prepare'?(isOos?`<span class="oos-lbl" onclick="toos('${p.id}')">⚠ Out of stock</span>`:`<button class="oos-btn" onclick="toos('${p.id}')">Mark OOS</button>`):'')}
   </div>`;
 }
-function grid(prods,cols){return `<div class="g${cols}">${prods.map(p=>cardH(p)).join('')}</div>`;}
+function grid(prods,cols){return `<div class="g${cols}">${prods.map(p=>cardH(p,cols===4)).join('')}</div>`;}
 // Order-mode product list for a subsection: drops orderHide ids and repeats
 // orderDouble ids (both copies share one quantity).
 function orderProducts(s){
@@ -1757,7 +1759,7 @@ function refreshCard(id){
   let p=LK[id];
   if(!p&&id.startsWith('gb-')) p={id,name:'🎁 Gift Box',code:'',isGB:true,catName:'Gift Box',catShort:'GB'};
   if(!p) return;
-  els.forEach(el=>{const tmp=document.createElement('div');tmp.innerHTML=cardH(p);el.replaceWith(tmp.firstChild);});
+  els.forEach(el=>{const tmp=document.createElement('div');tmp.innerHTML=cardH(p,!!el.closest('.g4'));el.replaceWith(tmp.firstChild);});
 }
 function refreshPrepCard(id){
   const el=document.getElementById(`pc-${id}`);if(!el) return;
