@@ -1166,11 +1166,14 @@ const NP_STAND_PHOTOS = [
 const CATS = [
   {id:'np',name:'Inspired Words Range',tab:'Inspired Words',short:'NP',cols:3,
     subsections:[
-      {title:'Keepsake Wallet Cards',products:NP_KEEPSAKE},
-      {title:'Sentiment Keyrings',products:NP_KEYRING},
-      {title:'Magnetic Bookmarks',products:NP_BOOKMARK},
-      {title:'Sentiment Fridge Magnets',products:NP_MAGNET},
-      {title:'Hanging Tin Card Plaques',products:NP_PLAQUE}
+      // Order/cols mirror the physical stand. To keep each stand row even, order
+      // mode hides one design (still stocked) from keepsakes & keyrings and shows
+      // one design twice in bookmarks & tin plaques.
+      {title:'Magnetic Bookmarks',products:NP_BOOKMARK,cols:4,orderDouble:['iwg1306']},
+      {title:'Sentiment Keyrings',products:NP_KEYRING,cols:4,orderHide:['iwg1024']},
+      {title:'Keepsake Wallet Cards',products:NP_KEEPSAKE,cols:4,orderHide:['iwg1203']},
+      {title:'Hanging Tin Card Plaques',products:NP_PLAQUE,cols:2,orderDouble:['iwg0914']},
+      {title:'Sentiment Fridge Magnets',products:NP_MAGNET,cols:3}
     ]},
   {id:'gs',name:'Glass Bird Suncatcher',tab:'Glass Bird', short:'GS',cols:4, products:GS},
   {id:'bs',name:'British Birds: Garden Signs',tab:'British Birds',    short:'BS',cols:4, products:BS},
@@ -1323,6 +1326,12 @@ function cardH(p){
   </div>`;
 }
 function grid(prods,cols){return `<div class="g${cols}">${prods.map(p=>cardH(p)).join('')}</div>`;}
+// Order-mode product list for a subsection: drops orderHide ids and repeats
+// orderDouble ids (both copies share one quantity).
+function orderProducts(s){
+  const hide=s.orderHide||[], dbl=s.orderDouble||[];
+  return s.products.filter(p=>!hide.includes(p.id)).flatMap(p=>dbl.includes(p.id)?[p,p]:[p]);
+}
 
 function catHasActivity(cat){
   const all=cat.subsections?cat.subsections.flatMap(s=>s.products||s.allProducts||[]):(cat.products||cat.baseProducts||[]);
@@ -1573,7 +1582,7 @@ function renderPage(){
           const ordered = prods.filter(p=>(order[p.id]||0)>0);
           if(ordered.length){
             html+=`<div class="sub-t">${s.title}</div>`;
-            html+=`<div class="g${cols}">${ordered.map(p=>prepCardH(p)).join('')}</div>`;
+            html+=`<div class="g${s.cols||cols}">${ordered.map(p=>prepCardH(p)).join('')}</div>`;
           }
         });
       } else {
@@ -1594,7 +1603,7 @@ function renderPage(){
     html+='<input class="srch" placeholder="Search…" oninput="doSearch(this.value)">';
     if(cat.cols==='phone') html+=renderPhone(cat);
     else if(cat.cols==='tp') cat.subsections.forEach(s=>{html+=`<div class="sub-t">${s.title}</div>`;html+=renderTP(s);});
-    else if(cat.subsections) cat.subsections.forEach(s=>{html+=`<div class="sub-t">${s.title}</div>`;html+=grid(s.products,cat.cols);});
+    else if(cat.subsections) cat.subsections.forEach(s=>{html+=`<div class="sub-t">${s.title}</div>`;html+=grid(orderProducts(s),s.cols||cat.cols);});
     else html+=grid(cat.products,cat.cols);
     html+='<div class="si-lbl">Special Instructions / <em>Instruções Especiais</em></div>';
     html+=`<textarea class="si-box" placeholder="Notes…" oninput="saveSI('${cat.id}',this.value)">${catSI[cat.id]||''}</textarea>`;
@@ -1743,11 +1752,12 @@ async function confirmPrepReconcile(){
 }
 
 function refreshCard(id){
-  const el=document.getElementById(`c-${id}`);if(!el) return;
+  // querySelectorAll: a product can appear twice in order mode (orderDouble)
+  const els=document.querySelectorAll(`[id="c-${id}"]`);if(!els.length) return;
   let p=LK[id];
   if(!p&&id.startsWith('gb-')) p={id,name:'🎁 Gift Box',code:'',isGB:true,catName:'Gift Box',catShort:'GB'};
   if(!p) return;
-  const tmp=document.createElement('div');tmp.innerHTML=cardH(p);el.replaceWith(tmp.firstChild);
+  els.forEach(el=>{const tmp=document.createElement('div');tmp.innerHTML=cardH(p);el.replaceWith(tmp.firstChild);});
 }
 function refreshPrepCard(id){
   const el=document.getElementById(`pc-${id}`);if(!el) return;
@@ -2889,7 +2899,7 @@ function renderStockMode(cat){
     cat.subsections.forEach(s=>{
       const prods = (s.products||s.allProducts||[]).map(p=>({...p, catShort:cat.short}));
       html += '<div class="sub-t">'+s.title+'</div>';
-      html += '<div class="g'+cols+'">'+prods.map(stockCardH).join('')+'</div>';
+      html += '<div class="g'+(s.cols||cols)+'">'+prods.map(stockCardH).join('')+'</div>';
     });
   } else {
     const prods = (cat.products||cat.baseProducts||[]).map(p=>({...p, catShort:cat.short}));
@@ -2989,7 +2999,7 @@ function renderRestockMode(cat){
     cat.subsections.forEach(s=>{
       const prods = (s.products||s.allProducts||[]).map(p=>({...p, code:p.code}));
       html += '<div class="sub-t">'+s.title+'</div>';
-      html += '<div class="g'+cols+'">'+prods.map(restockCardH).join('')+'</div>';
+      html += '<div class="g'+(s.cols||cols)+'">'+prods.map(restockCardH).join('')+'</div>';
     });
   } else {
     const prods = cat.products||cat.baseProducts||[];
